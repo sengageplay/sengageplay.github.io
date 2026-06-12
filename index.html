@@ -1,10 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My First Website</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Arcade</title>
+    <style>
+        /* Base Styling */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e; /* Fun, dark arcade purple/blue */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            text-align: center;
+        }
+
+        header {
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #0f0c20, #1a1a2e);
+            border-bottom: 3px solid #e94560; /* Neon accent bar */
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #e94560;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            color: #8a8aab;
+        }
+
+        /* The Friv-Style Grid Container */
+        .arcade-grid {
+            display: grid;
+            /* This line automatically fits as many square tiles as possible based on screen width */
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* Game Tile Styling */
+        .game-card {
+            background-color: #16213e;
+            border-radius: 12px;
+            overflow: hidden;
+            text-decoration: none;
+            color: white;
+            border: 2px solid #0f3460;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            
+            /* Forces tiles to be perfect squares */
+            aspect-ratio: 1 / 1; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Hover effects - making it feel interactive */
+        .game-card:hover {
+            transform: scale(1.08);
+            border-color: #e94560;
+            box-shadow: 0 0 15px #e94560;
+        }
+
+        /* Game Thumbnail Image */
+        .game-card img {
+            width: 100%;
+            height: 75%;
+            object-fit: cover; /* Keeps image crisp without stretching */
+            background-color: #0f172a;
+        }
+
+        /* Game Label/Title */
+        .game-title {
+            height: 25%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 5px;
+            background-color: #0f172a;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to My GitHub Pages Website!</h1>
-    <p>I built this website from scratch from the very beginning.</p>
+
+    <header>
+        <h1>Our Awesome Arcade</h1>
+        <p>6 Months of Making Games Together</p>
+    </header>
+
+    <!-- This is your main catalog -->
+    <div class="arcade-grid">
+
+        <!-- GAME CARD 1 -->
+        <a href="https://link-to-your-game-1.com" class="game-card">
+            <!-- Replace with a thumbnail image link later -->
+            <img src="https://picsum.photos/200?random=1" alt="Game 1 Thumbnail">
+            <div class="game-title">Space Blaster</div>
+        </a>
+
+        <!-- GAME CARD 2 -->
+        <a href="https://link-to-your-game-2.com" class="game-card">
+            <img src="https://picsum.photos/200?random=2" alt="Game 2 Thumbnail">
+            <div class="game-title">Mega Maze</div>
+        </a>
+
+        <!-- GAME CARD 3 -->
+        <a href="https://link-to-your-game-3.com" class="game-card">
+            <img src="https://picsum.photos/200?random=3" alt="Game 3 Thumbnail">
+            <div class="game-title">Pixel Jumper</div>
+        </a>
+
+        <!-- GAME CARD 4 -->
+        <a href="https://link-to-your-game-4.com" class="game-card">
+            <img src="https://picsum.photos/200?random=4" alt="Game 4 Thumbnail">
+            <div class="game-title">Speed Racer</div>
+        </a>
+
+        <!-- TIP: To add all 25-30 games, you will copy/paste the block above over and over, changing the title, image link, and web link for each one! -->
+
+    </div>
+
 </body>
 </html>
