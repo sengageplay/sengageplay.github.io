@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Land or Sea? Sorting Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        /* The Split Screen Zones */
+        .game-container {
+            display: flex;
+            width: 90%;
+            max-width: 1000px;
+            height: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .zone {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: center;
+            gap: 12px;
+            padding: 20px;
+            transition: background-color 0.3s;
+            overflow-y: auto; /* Adds scrolling if zones get too full on small screens */
+        }
+
+        .zone h2 {
+            width: 100%;
+            text-align: center;
+            margin-top: 0;
+            font-size: 2rem;
+            letter-spacing: 2px;
+        }
+
+        #land-zone {
+            background-color: #8ed081; /* Soft green */
+            border-right: 4px dashed #fff;
+        }
+
+        #sea-zone {
+            background-color: #72bcd4; /* Soft blue */
+        }
+
+        /* Dragover lighting effects */
+        .zone.hovered {
+            background-color: #b2ff9e !important;
+        }
+        #sea-zone.hovered {
+            background-color: #a0e0ff !important;
+        }
+
+        /* PECS Symbols Choose Menu Container */
+        .symbols-repository {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            max-width: 1000px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-height: 160px; /* Increased to comfortably fit 140px tall cards */
+            width: 90%;
+        }
+
+        /* PECS Card Styling (Now 140px x 140px) */
+        .pecs-card {
+            width: 140px;
+            height: 140px;
+            background-color: #fff;
+            border: 3px solid #ccc;
+            border-radius: 16px; /* Slightly rounder corners for the bigger size */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            overflow: hidden;
+            padding: 8px;
+        }
+
+        .pecs-card:active {
+            cursor: grabbing;
+        }
+
+        .pecs-card.dragging {
+            opacity: 0.4;
+        }
+
+        .pecs-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none; 
+        }
+
+        /* End Game Screen Container */
+        #win-container {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            animation: pop 0.5s ease-out;
+        }
+
+        #win-message {
+            font-size: 2rem;
+            color: #2e7d32;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* Fun, chunky button for kids */
+        #restart-btn {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        #restart-btn:hover {
+            background-color: #e68a00;
+        }
+
+        #restart-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Sort the Pictures</h1>
+    <p>Drag each picture to the correct place!</p>
+
+    <div class="game-container">
+        <div class="zone" id="land-zone" data-target="land">
+            <h2>🌳 LAND</h2>
+        </div>
+        <div class="zone" id="sea-zone" data-target="sea">
+            <h2>🌊 SEA</h2>
+        </div>
+    </div>
+
+    <div class="symbols-repository" id="bank">
+        <div class="pecs-card" draggable="true" id="card1" data-type="sea">
+            <img src="pic1.png" alt="Sea creature 1">
+        </div>
+        <div class="pecs-card" draggable="true" id="card2" data-type="sea">
+            <img src="pic2.png" alt="Sea creature 2">
+        </div>
+        <div class="pecs-card" draggable="true" id="card3" data-type="sea">
+            <img src="pic3.png" alt="Sea creature 3">
+        </div>
+        <div class="pecs-card" draggable="true" id="card4" data-type="sea">
+            <img src="pic4.png" alt="Sea creature 4">
+        </div>
+        <div class="pecs-card" draggable="true" id="card5" data-type="sea">
+            <img src="pic5.png" alt="Sea creature 5">
+        </div>
+
+        <div class="pecs-card" draggable="true" id="card6" data-type="land">
+            <img src="pic6.png" alt="Land creature 1">
+        </div>
+        <div class="pecs-card" draggable="true" id="card7" data-type="land">
+            <img src="pic7.png" alt="Land creature 2">
+        </div>
+        <div class="pecs-card" draggable="true" id="card8" data-type="land">
+            <img src="pic8.png" alt="Land creature 3">
+        </div>
+        <div class="pecs-card" draggable="true" id="card9" data-type="land">
+            <img src="pic9.png" alt="Land creature 4">
+        </div>
+        <div class="pecs-card" draggable="true" id="card10" data-type="land">
+            <img src="pic10.png" alt="Land creature 5">
+        </div>
+    </div>
+
+    <div id="win-container">
+        <div id="win-message">🎉 Well Done! You did it! 🎉</div>
+        <button id="restart-btn">Play Again 🔄</button>
+    </div>
+
+    <script>
+        const cards = document.querySelectorAll('.pecs-card');
+        const zones = document.querySelectorAll('.zone');
+        const bank = document.getElementById('bank');
+        const winContainer = document.getElementById('win-container');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Shuffles the menu order so they aren't pre-sorted
+        function shuffleCards() {
+            const cardsArray = Array.from(cards);
+            cardsArray.sort(() => Math.random() - 0.5);
+            cardsArray.forEach(card => bank.appendChild(card));
+        }
+        
+        // Initial shuffle on load
+        shuffleCards();
+
+        // Setup Drag and Drop
+        cards.forEach(card => {
+            card.addEventListener('dragstart', () => {
+                card.classList.add('dragging');
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                checkWinCondition();
+            });
+        });
+
+        zones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault(); 
+                zone.classList.add('hovered');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('hovered');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                zone.classList.remove('hovered');
+                const draggingCard = document.querySelector('.dragging');
+                
+                if (!draggingCard) return;
+
+                // Match verification
+                if (draggingCard.dataset.type === zone.dataset.target) {
+                    zone.appendChild(draggingCard);
+                } else {
+                    // Silently send back to choice menu if wrong
+                    bank.appendChild(draggingCard);
+                }
+            });
+        });
+
+        // Allow dragging back to the choose menu manually
+        bank.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        bank.addEventListener('drop', () => {
+            const draggingCard = document.querySelector('.dragging');
+            if (draggingCard) {
+                bank.appendChild(draggingCard);
+            }
+        });
+
+        // Check if all cards are cleared from the choose menu
+        function checkWinCondition() {
+            const remainingCards = bank.querySelectorAll('.pecs-card').length;
+            if (remainingCards === 0) {
+                winContainer.style.display = 'block';
+            } else {
+                winContainer.style.display = 'none';
+            }
+        }
+
+        // Restart Game Logic
+        restartBtn.addEventListener('click', () => {
+            winContainer.style.display = 'none'; // Hide win elements
+            shuffleCards();                      // Return items to bank & re-shuffle
+        });
+    </script>
+</body>
+</html>
