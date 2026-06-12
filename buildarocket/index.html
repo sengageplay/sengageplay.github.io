@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Icon Explorer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0f19;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            /* Prevents accidental text selection when double tapping the smartboard */
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+
+        h1 {
+            color: #4cc9f0;
+            font-size: 3rem; /* Bigger Title */
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .instructions {
+            font-size: 1.8rem; /* Bigger Text */
+            margin-bottom: 30px;
+            color: #e0e1dd;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 1400px; /* Made the container wider for big screens */
+            margin: 0 auto;
+            flex-wrap: nowrap; /* Keeps everything nicely side-by-side */
+        }
+
+        /* Enriched Grid for Smartboards */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 180px); /* Increased from 120px to 180px */
+            gap: 25px; /* More space between buttons so kids don't misclick */
+            justify-content: center;
+            margin: 20px;
+        }
+
+        /* Much bigger cards for tapping */
+        .icon-card {
+            width: 180px; 
+            height: 180px;
+            background-color: #1f2438;
+            border: 4px solid #3a415a;
+            border-radius: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.4rem; /* Bigger fallback text if image fails */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        /* Visual feedback on tap */
+        .icon-card:active {
+            transform: scale(0.95);
+            background-color: #3a415a;
+        }
+
+        .icon-card img {
+            max-width: 85%;
+            max-height: 85%;
+            object-fit: contain;
+        }
+
+        .icon-card.found {
+            opacity: 0.15; /* Fades out more so they look obviously "done" */
+            cursor: not-allowed;
+            border-color: #4caf50;
+            transform: none;
+        }
+
+        /* Scaled up Rocket Area to match the bigger icons */
+        .rocket-area {
+            width: 400px; /* Increased from 300px */
+            height: 580px; /* Increased from 450px */
+            background-color: #151a2e;
+            border: 4px dashed #4cc9f0;
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        .rocket-slice {
+            width: 100%;
+            max-width: 320px; /* Allows your rocket image to scale up beautifully */
+            height: auto;
+            opacity: 0;
+            display: block;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .rocket-slice.visible {
+            opacity: 1;
+        }
+
+        /* Win Animation */
+        @keyframes blastOff {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-1000px); opacity: 0; }
+        }
+
+        .blast-off {
+            animation: blastOff 2s ease-in forwards;
+        }
+
+        /* Super-sized feedback messages */
+        .message-box {
+            font-size: 2.5rem; 
+            font-weight: bold;
+            height: 60px;
+            margin-top: 30px;
+            color: #f72585;
+        }
+
+        /* Huge tap-friendly reset button */
+        .reset-btn {
+            display: none;
+            margin: 25px auto;
+            padding: 15px 40px;
+            font-size: 1.8rem;
+            background-color: #4cc9f0;
+            color: #0b0f19;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Space Icon Explorer 🚀</h1>
+    <div class="instructions">Can you find the 5 space items to build the rocket?</div>
+
+    <div class="game-container">
+        <div class="grid-container" id="left-grid"></div>
+
+        <div class="rocket-area" id="rocket-launchpad">
+            <img id="slice-1" class="rocket-slice" src="rocket1.png" alt="Rocket Part 1">
+            <img id="slice-2" class="rocket-slice" src="rocket2.png" alt="Rocket Part 2">
+            <img id="slice-3" class="rocket-slice" src="rocket3.png" alt="Rocket Part 3">
+            <img id="slice-4" class="rocket-slice" src="rocket4.png" alt="Rocket Part 4">
+            <img id="slice-5" class="rocket-slice" src="rocket5.png" alt="Rocket Part 5">
+        </div>
+
+        <div class="grid-container" id="right-grid"></div>
+    </div>
+
+    <div class="message-box" id="feedback-msg"></div>
+    <button class="reset-btn" id="reset-button" onclick="resetGame()">Play Again!</button>
+
+    <script>
+        const items = [
+            { id: 1, filename: 'pic1.png', isSpace: true },
+            { id: 2, filename: 'pic2.png', isSpace: true },
+            { id: 3, filename: 'pic3.png', isSpace: true },
+            { id: 4, filename: 'pic4.png', isSpace: true },
+            { id: 5, filename: 'pic5.png', isSpace: true },
+            { id: 6, filename: 'pic6.png', isSpace: false },
+            { id: 7, filename: 'pic7.png', isSpace: false },
+            { id: 8, filename: 'pic8.png', isSpace: false },
+            { id: 9, filename: 'pic9.png', isSpace: false },
+            { id: 10, filename: 'pic10.png', isSpace: false }
+        ];
+
+        const sliceOrder = ['slice-1', 'slice-2', 'slice-3', 'slice-4', 'slice-5'];
+        let spaceItemsFound = 0;
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function initGame() {
+            spaceItemsFound = 0;
+            document.getElementById('feedback-msg').innerText = "";
+            document.getElementById('reset-button').style.display = "none";
+            
+            const launchpad = document.getElementById('rocket-launchpad');
+            launchpad.classList.remove('blast-off');
+
+            sliceOrder.forEach(id => {
+                document.getElementById(id).classList.remove('visible');
+            });
+
+            const leftGrid = document.getElementById('left-grid');
+            const rightGrid = document.getElementById('right-grid');
+            leftGrid.innerHTML = '';
+            rightGrid.innerHTML = '';
+
+            const shuffledItems = shuffle([...items]);
+            
+            shuffledItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'icon-card';
+                card.id = `card-${item.id}`;
+                
+                const img = document.createElement('img');
+                img.src = item.filename;
+                img.alt = `Item ${item.id}`;
+                img.onerror = function() {
+                    this.style.display = 'none';
+                    card.innerText = item.filename.split('.')[0]; 
+                };
+                
+                card.appendChild(img);
+
+                card.onclick = function() {
+                    if (card.classList.contains('found')) return;
+
+                    if (item.isSpace) {
+                        card.classList.add('found');
+                        const partToReveal = sliceOrder[spaceItemsFound];
+                        document.getElementById(partToReveal).classList.add('visible');
+                        
+                        spaceItemsFound++;
+                        document.getElementById('feedback-msg').style.color = "#4caf50";
+                        document.getElementById('feedback-msg').innerText = "🧑‍🚀 You found a space item!";
+
+                        if (spaceItemsFound === 5) {
+                            document.getElementById('feedback-msg').style.color = "#ec9a29";
+                            document.getElementById('feedback-msg').innerText = "🚀 3... 2... 1... BLAST OFF!!!";
+                            
+                            setTimeout(() => {
+                                launchpad.classList.add('blast-off');
+                                document.getElementById('reset-button').style.display = "block";
+                            }, 1000);
+                        }
+                    } else {
+                        document.getElementById('feedback-msg').style.color = "#f72585";
+                        document.getElementById('feedback-msg').innerText = "❌ That's not a space item! Try again.";
+                    }
+                };
+
+                if (index < 5) {
+                    leftGrid.appendChild(card);
+                } else {
+                    rightGrid.appendChild(card);
+                }
+            });
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
