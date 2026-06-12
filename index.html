@@ -3,165 +3,511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sengage - Communication Control Deck</title>
+    <title>Simon Says: Bubble Controls</title>
     <style>
-        :root {
-            --card-bg: #ffffff;
-            --card-border: #334155;
-            --text-dark: #0f172a;
-            --screen-bg: #1e1b4b;
-        }
-
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #0f172a;
             color: white;
             margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            padding: 15px;
+            overflow: hidden;
+            height: 100vh;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        /* Top Header Area for Sengage */
-        header {
+        /* Mode Selector Toggle */
+        .mode-selector {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
-        h1 {
-            margin: 0 0 5px 0;
-            font-size: 2.5rem;
-            color: #38bdf8;
-        }
-
-        /* Main Play/Display Canvas */
-        .display-canvas {
-            width: 100%;
-            max-width: 1200px;
-            height: 40vh;
-            background: linear-gradient(to top, var(--screen-bg), #0f172a);
-            border: 4px solid #475569;
+        .mode-btn {
+            background-color: #334155;
+            border: 2px solid #475569;
+            color: #94a3b8;
+            padding: 10px 24px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
             border-radius: 20px;
-            margin-bottom: 25px;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
-            position: relative;
+            margin: 0 10px;
+            transition: all 0.2s;
         }
 
-        /* PECS / ARASAAC Grid Layout */
-        .pecs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
+        .mode-btn.active {
+            background-color: #38bdf8;
+            border-color: #0284c7;
+            color: #0f172a;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        /* Top Simon Says Command Banner */
+        .simon-banner {
+            background-color: #1e293b;
+            border: 4px solid #38bdf8;
+            border-radius: 25px;
+            padding: 15px;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            transition: opacity 0.3s ease;
+        }
+
+        .simon-banner.hidden {
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .simon-avatar {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            border-radius: 50%;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .command-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #f0fdf4;
+        }
+
+        /* Bubble Play Screen */
+        .bubble-screen {
             width: 100%;
-            max-width: 1200px;
-            padding: 10px;
-            box-sizing: border-box;
+            max-width: 1300px;
+            height: calc(100vh - 350px);
+            margin: 15px auto;
+            background: linear-gradient(to top, #1e1b4b, #0f172a);
+            border: 4px solid #475569;
+            border-radius: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
         }
 
-        /* Authentic ARASAAC Styled Grid Item Box */
-        .pecs-card {
-            background-color: var(--card-bg);
-            border: 5px solid var(--card-border);
+        /* Floating Bubbles */
+        .bubble {
+            position: absolute;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.45) 0%, rgba(56,189,248,0.25) 60%, rgba(236,72,153,0.3) 100%);
+            border: 2px solid rgba(255,255,255,0.7);
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.4), 0 4px 10px rgba(0,0,0,0.2);
+            bottom: -120px;
+        }
+
+        .bubble.can-pop {
+            cursor: pointer;
+        }
+
+        /* Bottom Control Panel */
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        /* Massive PECS Style Communication Cards */
+        .digital-btn {
+            flex: 1;
+            max-width: 165px;
+            height: 140px; /* Made taller for clearer target area */
+            background-color: #f8fafc; /* High contrast card background */
+            border: 5px solid #cbd5e1;
             border-radius: 16px;
-            aspect-ratio: 1 / 1; /* Ensures perfect square like physical PECS boards */
+            cursor: pointer;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
+            padding: 10px 4px;
             box-sizing: border-box;
-            cursor: pointer;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-            transition: transform 0.1s ease, border-color 0.2s;
+            box-shadow: 0 8px 14px rgba(0,0,0,0.4);
+            transition: transform 0.1s, border-color 0.2s, background-color 0.2s;
         }
 
-        .pecs-card:active {
-            transform: scale(0.95);
+        .digital-btn:active {
+            transform: scale(0.92);
         }
 
-        /* Placeholder image area where your ARASAAC assets will link */
-        .pecs-image {
-            width: 75%;
-            height: 75%;
-            object-fit: contain;
-            pointer-events: none;
+        /* Extra Large Graphic Symbol Area mimicking ARASAAC structures */
+        .btn-icon-frame {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem; /* Massive icons */
+            line-height: 1;
+            flex-grow: 1;
         }
 
-        /* Bottom text strip mimicking ARASAAC user configurations */
-        .pecs-label {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--text-dark);
+        /* High Contrast Bold Labeling Text */
+        .btn-label {
+            font-size: 1rem;
+            font-weight: 900;
             text-transform: uppercase;
+            color: #0f172a; /* Dark text on bright card */
             text-align: center;
             width: 100%;
             border-top: 2px solid #e2e8f0;
-            padding-top: 6px;
+            padding-top: 4px;
             letter-spacing: 0.5px;
         }
 
-        /* Interactive Focus Highlights */
-        .pecs-card.active-state {
-            border-color: #0284c7;
+        /* Active Target States */
+        .digital-btn.active-state {
             background-color: #bae6fd;
+            border-color: #0284c7;
+        }
+        
+        .digital-btn.active-state .btn-label {
+            color: #0369a1;
+            border-top-color: #93c5fd;
+        }
+
+        .digital-btn.pop-on {
+            background-color: #fbcfe8;
+            border-color: #db2777;
+        }
+        .digital-btn.pop-on .btn-label {
+            color: #9d174d;
+            border-top-color: #f472b6;
+        }
+
+        .feedback-pop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 7rem;
+            font-weight: bold;
+            color: #22c55e;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .win-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(15, 23, 42, 0.95);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .win-overlay h2 { font-size: 4.5rem; color: #4deb6f; margin-bottom: 12px; }
+        .win-overlay p { font-size: 2.2rem; margin-bottom: 25px; }
+        
+        .play-again-btn {
+            padding: 15px 45px; font-size: 2rem; font-weight: bold;
+            background-color: #38bdf8; border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(56,189,248,0.4);
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Sengage Deck</h1>
-    </header>
-
-    <div class="display-canvas" id="main-screen"></div>
-
-    <div class="pecs-grid">
-        
-        <div class="pecs-card" onclick="triggerAction('slower')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/3418" alt="Slower">
-            <span class="pecs-label">Slower</span>
-        </div>
-
-        <div class="pecs-card" onclick="triggerAction('play')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/2448" alt="Play">
-            <span class="pecs-label">Play</span>
-        </div>
-
-        <div class="pecs-card" onclick="triggerAction('pause')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/7504" alt="Pause">
-            <span class="pecs-label">Pause</span>
-        </div>
-
-        <div class="pecs-card" onclick="triggerAction('stop')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/2849" alt="Stop">
-            <span class="pecs-label">Stop</span>
-        </div>
-
-        <div class="pecs-card" onclick="triggerAction('faster')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/10313" alt="Faster">
-            <span class="pecs-label">Faster</span>
-        </div>
-
-        <div class="pecs-card" onclick="triggerAction('vol-down')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/8172" alt="Volume Down">
-            <span class="pecs-label">Volume -</span>
-        </div>
-
-        <div class="pecs-card" onclick="triggerAction('vol-up')">
-            <img class="pecs-image" src="https://api.arasaac.org/api/pictograms/8171" alt="Volume Up">
-            <span class="pecs-label">Volume +</span>
-        </div>
-
+    <div class="mode-selector">
+        <button id="mode-free" class="mode-btn active" onclick="setMode('free')">Free Play Media Deck</button>
+        <button id="mode-simon" class="mode-btn" onclick="setMode('simon')">Simon Says Game</button>
     </div>
 
+    <div class="simon-banner hidden" id="banner">
+        <img class="simon-avatar" src="data:image/png;base64,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" alt="Simon">
+        <div class="command-text" id="command-display">Free Play Mode Enabled</div>
+    </div>
+
+    <div class="bubble-screen" id="screen">
+        <div class="feedback-pop" id="success-tick">✔️</div>
+        
+        <div class="win-overlay" id="win-screen">
+            <h2>🏆 Game Complete!</h2>
+            <p>You are a Digital Symbol Master!</p>
+            <button class="play-again-btn" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        
+        <div id="btn-rewind" class="digital-btn" onclick="handlePress('rewind')">
+            <span class="btn-icon-frame">⏪</span>
+            <span class="btn-label">Slower</span>
+        </div>
+        
+        <div id="btn-play" class="digital-btn" onclick="handlePress('play')">
+            <span class="btn-icon-frame">▶️</span>
+            <span class="btn-label">Play</span>
+        </div>
+        
+        <div id="btn-pause" class="digital-btn" onclick="handlePress('pause')">
+            <span class="btn-icon-frame">⏸️</span>
+            <span class="btn-label">Pause</span>
+        </div>
+        
+        <div id="btn-stop" class="digital-btn" onclick="handlePress('stop')">
+            <span class="btn-icon-frame">⏹️</span>
+            <span class="btn-label">Stop</span>
+        </div>
+        
+        <div id="btn-ff" class="digital-btn" onclick="handlePress('ff')">
+            <span class="btn-icon-frame">⏩</span>
+            <span class="btn-label">Faster</span>
+        </div>
+        
+        <div id="btn-voldown" class="digital-btn" onclick="handlePress('voldown')">
+            <span class="btn-icon-frame">🔉</span>
+            <span class="btn-label">Volume -</span>
+        </div>
+        
+        <div id="btn-volup" class="digital-btn" onclick="handlePress('volup')">
+            <span class="btn-icon-frame">🔊</span>
+            <span class="btn-label">Volume +</span>
+        </div>
+        
+        <div id="btn-poptoggle" class="digital-btn" onclick="togglePopAbility()">
+            <span class="btn-icon-frame" id="pop-icon">🚫</span>
+            <span class="btn-label" id="pop-label">Pop Off</span>
+        </div>
+    </div>
+
+    <audio id="pop-sound" src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhYAAAAEgAAA21pbm9yX3ZlcnNpb24AMgBUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAG1wNDJtcDRhVFNTRQAAAA8AAADMYmFsbG9vbi9tcDNsaWIA/+7BkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABYaW5mbwAAAA8AAAA6AAAL0AATExMTGxsbGxskJCQkJCQrKysrKys7Ozs7OztHR0dHR0dXV1dXV1dnZ2dnZ2dnampqamqqqqqqqqq6urqqurq7u7u7u7vHx8fHx8fW1tbW1tbe3t7e3t7m5ubm5ub29vb29vb//////wAAAAtMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/wAABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AABhAAAAMAAAA0gAAAEAAAFzAAAAYAAAAnkAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/7smQAD/wAAAEAAAAwAAA7gAAAQAAAGUAAAAGAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+7BkAA9YAAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA74AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA9YAAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA64AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA74AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA+YAAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA64AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA9YAAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA7gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/4AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+7BkAA/8AAA5gAAAMAAAADSAAAAQAAAEMAAAAYAAAAnwAAAAAUVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/==" preload="auto" loop crossorigin="anonymous"></audio>
+
     <script>
-        function triggerAction(action) {
-            console.log("Action triggered on deck:", action);
-            // This is where our game logic connects on the main page!
+        // Game Settings and Access Hierarchy
+        const commands = [
+            { text: "Simon Says: PLAY the bubbles! ▶️", action: "play" },
+            { text: "Simon Says: Turn it down! Press VOLUME DOWN! 🔉", action: "voldown" },
+            { text: "Simon Says: FREEZE the bubbles! ⏸️", action: "pause" },
+            { text: "Simon Says: Make them GO FASTER! ⏩", action: "ff" },
+            { text: "Simon Says: Turn it up! Press VOLUME UP! 🔊", action: "volup" },
+            { text: "Simon Says: Make them GO SLOWER... ⏪", action: "rewind" },
+            { text: "Simon Says: STOP the bubbles! ⏹️", action: "stop" }
+        ];
+
+        let gameMode = "free"; 
+        let currentCommandIndex = 0;
+        
+        let bubbleState = "pause"; 
+        let bubbleSpeed = 2; 
+        let volumeLevel = 0.5;
+        let isAudioPlaying = false;
+        let canPopBubbles = false; 
+        let audioUnlocked = false; 
+
+        const screen = document.getElementById('screen');
+        const popAudio = document.getElementById('pop-sound');
+        const bubblesArray = [];
+
+        // Direct pipeline initialization to unlock audio restriction within iframe wrappers
+        function unlockAudioEngine() {
+            if (audioUnlocked) return;
+            popAudio.play().then(() => {
+                popAudio.pause();
+                popAudio.currentTime = 0;
+                audioUnlocked = true;
+            }).catch(e => console.log("Awaiting visual interaction..."));
         }
+
+        function setMode(mode) {
+            unlockAudioEngine();
+            gameMode = mode;
+            document.getElementById('mode-simon').classList.toggle('active', mode === 'simon');
+            document.getElementById('mode-free').classList.toggle('active', mode === 'free');
+            
+            const banner = document.getElementById('banner');
+            if (mode === 'free') {
+                banner.classList.add('hidden');
+                document.getElementById('command-display').innerText = "Free Play Mode Enabled";
+            } else {
+                banner.classList.remove('hidden');
+                document.getElementById('command-display').innerText = commands[currentCommandIndex].text;
+            }
+            resetGame();
+        }
+
+        function togglePopAbility() {
+            unlockAudioEngine();
+            canPopBubbles = !canPopBubbles;
+            
+            const btn = document.getElementById('btn-poptoggle');
+            const icon = document.getElementById('pop-icon');
+            const label = document.getElementById('pop-label');
+            
+            if (canPopBubbles) {
+                btn.classList.add('pop-on');
+                icon.innerText = "💥";
+                label.innerText = "Pop On";
+                document.querySelectorAll('.bubble').forEach(b => b.classList.add('can-pop'));
+            } else {
+                btn.classList.remove('pop-on');
+                icon.innerText = "🚫";
+                label.innerText = "Pop Off";
+                document.querySelectorAll('.bubble').forEach(b => b.classList.remove('can-pop'));
+            }
+        }
+
+        function createBubble() {
+            if (bubbleState === "stop" || bubbleState === "pause") return;
+            if (bubblesArray.length > 25) return; 
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            if (canPopBubbles) bubble.className += ' can-pop';
+            
+            const size = Math.floor(Math.random() * 65) + 45;
+            bubble.style.width = `${size}px`;
+            bubble.style.height = `${size}px`;
+            bubble.style.left = `${Math.random() * (screen.clientWidth - size)}px`;
+            
+            bubble.onclick = function(e) {
+                e.stopPropagation();
+                if (!canPopBubbles) return; 
+                
+                bubble.remove();
+                const index = bubblesArray.findIndex(b => b.element === bubble);
+                if (index > -1) bubblesArray.splice(index, 1);
+            };
+
+            screen.appendChild(bubble);
+            bubblesArray.push({
+                element: bubble, y: -120, speed: (Math.random() * 1.5) + 0.5
+            });
+        }
+
+        function updateBubbles() {
+            if (bubbleState === "play") {
+                for (let i = bubblesArray.length - 1; i >= 0; i--) {
+                    const b = bubblesArray[i];
+                    b.y += b.speed * bubbleSpeed;
+                    b.element.style.bottom = `${b.y}px`;
+
+                    if (b.y > screen.clientHeight) {
+                        b.element.remove();
+                        bubblesArray.splice(i, 1);
+                    }
+                }
+            }
+            requestAnimationFrame(updateBubbles);
+        }
+
+        function handlePress(actionPressed) {
+            unlockAudioEngine();
+
+            if (gameMode === "simon") {
+                const targetAction = commands[currentCommandIndex].action;
+                if (actionPressed === targetAction) {
+                    const tick = document.getElementById('success-tick');
+                    tick.style.opacity = '1';
+                    setTimeout(() => tick.style.opacity = '0', 600);
+
+                    applyDigitalAction(actionPressed);
+
+                    currentCommandIndex++;
+                    if (currentCommandIndex < commands.length) {
+                        document.getElementById('command-display').innerText = commands[currentCommandIndex].text;
+                    } else {
+                        document.getElementById('win-screen').style.display = "flex";
+                        popAudio.pause(); 
+                    }
+                }
+            } else {
+                applyDigitalAction(actionPressed);
+            }
+        }
+
+        function applyDigitalAction(action) {
+            document.querySelectorAll('.control-panel .digital-btn:not(#btn-poptoggle)').forEach(b => b.classList.remove('active-state'));
+            
+            if (action === "play") {
+                bubbleState = "play";
+                bubbleSpeed = 2;
+                popAudio.volume = volumeLevel;
+                popAudio.play().then(() => { isAudioPlaying = true; }).catch(()=>{});
+                document.getElementById('btn-play').classList.add('active-state');
+            } else if (action === "pause") {
+                bubbleState = "pause";
+                popAudio.pause();
+                isAudioPlaying = false;
+                document.getElementById('btn-pause').classList.add('active-state');
+            } else if (action === "stop") {
+                bubbleState = "stop";
+                popAudio.pause();
+                popAudio.currentTime = 0;
+                isAudioPlaying = false;
+                while(bubblesArray.length > 0) {
+                    bubblesArray[0].element.remove();
+                    bubblesArray.shift();
+                }
+                document.getElementById('btn-stop').classList.add('active-state');
+            } else if (action === "ff") {
+                bubbleState = "play";
+                bubbleSpeed = 5;
+                popAudio.volume = volumeLevel;
+                popAudio.play().then(() => { isAudioPlaying = true; }).catch(()=>{});
+                document.getElementById('btn-ff').classList.add('active-state');
+            } else if (action === "rewind") {
+                bubbleState = "play";
+                bubbleSpeed = 0.5;
+                popAudio.volume = volumeLevel;
+                popAudio.play().then(() => { isAudioPlaying = true; }).catch(()=>{});
+                document.getElementById('btn-rewind').classList.add('active-state');
+            } else if (action === "voldown") {
+                volumeLevel = Math.max(0, volumeLevel - 0.25);
+                popAudio.volume = volumeLevel;
+                document.getElementById('btn-voldown').classList.add('active-state');
+                setTimeout(() => document.getElementById('btn-voldown').classList.remove('active-state'), 300);
+            } else if (action === "volup") {
+                volumeLevel = Math.min(1, volumeLevel + 0.25);
+                popAudio.volume = volumeLevel;
+                document.getElementById('btn-volup').classList.add('active-state');
+                setTimeout(() => document.getElementById('btn-volup').classList.remove('active-state'), 300);
+            }
+        }
+
+        function resetGame() {
+            currentCommandIndex = 0;
+            bubbleState = "pause"; 
+            bubbleSpeed = 2;
+            volumeLevel = 0.5;
+            popAudio.volume = volumeLevel;
+            popAudio.pause();
+            isAudioPlaying = false;
+            
+            canPopBubbles = true;
+            togglePopAbility(); 
+            
+            while(bubblesArray.length > 0) {
+                bubblesArray[0].element.remove();
+                bubblesArray.shift();
+            }
+
+            document.getElementById('win-screen').style.display = "none";
+            document.querySelectorAll('.digital-btn').forEach(b => b.classList.remove('active-state'));
+            
+            if (gameMode === "simon") {
+                document.getElementById('command-display').innerText = commands[0].text;
+            }
+        }
+
+        setInterval(createBubble, 800);
+
+        window.onload = function() {
+            resetGame();
+            updateBubbles();
+        };
     </script>
 </body>
 </html>
