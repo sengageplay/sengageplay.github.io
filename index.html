@@ -5,90 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SENgage Play</title>
     <style>
-        /* Base Styling */
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a2e; /* Fun, dark arcade purple/blue */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121214; /* Calming, low-distraction dark background */
+            font-family: 'Segoe UI', system-ui, sans-serif;
             color: #fff;
             text-align: center;
         }
 
         header {
-            padding: 30px 20px;
-            background: linear-gradient(135deg, #0f0c20, #1a1a2e);
-            border-bottom: 3px solid #e94560; /* Neon accent bar */
+            padding: 25px 20px;
+            background-color: #1a1a1e;
+            border-bottom: 4px solid #4ade80; /* Friendly green accent anchor */
         }
 
         header h1 {
             margin: 0;
-            font-size: 2.5rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            text-shadow: 0 0 10px #e94560;
+            font-size: 2.6rem;
+            color: #ffffff;
         }
 
         header p {
             margin: 8px 0 0;
-            color: #8a8aab;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
+            color: #a1a1aa;
+            font-size: 1.3rem;
+            font-weight: 500;
         }
 
-        /* The Friv-Style Grid Container */
         .arcade-grid {
             display: grid;
-            /* This line automatically fits as many square tiles as possible based on screen width */
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px;
+            /* Slightly larger minimum tile size (160px) for easier clicking/tapping */
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
             max-width: 1200px;
             margin: 40px auto;
             padding: 0 20px;
         }
 
-        /* Game Tile Styling */
         .game-card {
-            background-color: #16213e;
-            border-radius: 12px;
+            background-color: #ffffff; /* Clean white card background to match PECS style */
+            border-radius: 16px;
             overflow: hidden;
             text-decoration: none;
-            color: white;
-            border: 2px solid #0f3460;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            color: #121214; /* Dark text for high contrast on white cards */
+            border: 4px solid #27272a;
+            transition: transform 0.15s ease-in-out, border-color 0.15s ease-in-out;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
             
-            /* Forces tiles to be perfect squares */
             aspect-ratio: 1 / 1; 
             display: flex;
             flex-direction: column;
         }
 
-        /* Hover effects - making it feel interactive */
-        .game-card:hover {
-            transform: scale(1.08);
-            border-color: #e94560;
-            box-shadow: 0 0 15px #e94560;
+        /* Clear, easy interactive focus response */
+        .game-card:hover, .game-card:focus {
+            transform: scale(1.05);
+            border-color: #4ade80; /* Turns bright green when hovered/selected */
+            outline: none;
         }
 
-        /* Game Thumbnail Image */
         .game-card img {
             width: 100%;
             height: 75%;
-            object-fit: cover; /* Keeps image crisp without stretching */
-            background-color: #0f172a;
+            object-fit: contain; /* Prevents symbols from clipping or stretching */
+            padding: 10px; /* Gives the symbol breathing room inside the tile */
+            box-sizing: border-box;
+            background-color: #ffffff;
         }
 
-        /* Game Label/Title */
         .game-title {
             height: 25%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             font-weight: bold;
             padding: 5px;
-            background-color: #0f172a;
+            background-color: #f4f4f5; /* Light grey bottom strip for text legibility */
+            border-top: 2px solid #e4e4e7;
         }
     </style>
 </head>
@@ -99,31 +94,12 @@
         <p>Games for SEND Children</p>
     </header>
 
-    <!-- This is your main catalog -->
     <div class="arcade-grid">
 
-        <!-- GAME CARD 1 -->
-        <a href="https://link-to-your-game-1.com" class="game-card">
-            <img src="https://picsum.photos/200?random=1" alt="Game 1 Thumbnail">
+        <!-- GAME CARD 1: Connects your play.png symbol and your game link -->
+        <a href="https://link-to-your-game-from-previous-chat.com" class="game-card">
+            <img src="images/play.png" alt="Play Symbol">
             <div class="game-title">Space Blaster</div>
-        </a>
-
-        <!-- GAME CARD 2 -->
-        <a href="https://link-to-your-game-2.com" class="game-card">
-            <img src="https://picsum.photos/200?random=2" alt="Game 2 Thumbnail">
-            <div class="game-title">Mega Maze</div>
-        </a>
-
-        <!-- GAME CARD 3 -->
-        <a href="https://link-to-your-game-3.com" class="game-card">
-            <img src="https://picsum.photos/200?random=3" alt="Game 3 Thumbnail">
-            <div class="game-title">Pixel Jumper</div>
-        </a>
-
-        <!-- GAME CARD 4 -->
-        <a href="https://link-to-your-game-4.com" class="game-card">
-            <img src="https://picsum.photos/200?random=4" alt="Game 4 Thumbnail">
-            <div class="game-title">Speed Racer</div>
         </a>
 
     </div>
