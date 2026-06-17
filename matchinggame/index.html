@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3-Category Matching Game</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #ffffff;
+            --accent-color: #e94560;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+
+        .screen {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Menu Styles */
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 300px;
+            margin: 20px auto 0;
+        }
+
+        .menu-btn, .control-btn {
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .menu-btn:hover, .control-btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        /* Game Meta Controls */
+        .game-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #win-message {
+            font-size: 1.5rem;
+            color: #4cd137;
+            font-weight: bold;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        /* Grid Layout (4 rows x 5 columns) */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            perspective: 1000px;
+        }
+
+        /* Card Styling */
+        .card {
+            aspect-ratio: 1 / 1;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-back {
+            background-color: var(--card-bg);
+            background-image: url('images/card-back.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-front {
+            background-color: #fff;
+            transform: rotateY(180deg);
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Memory Matching Game</h1>
+
+        <div id="menu-screen" class="screen">
+            <h2>Choose a Category:</h2>
+            <div class="menu-buttons">
+                <button class="menu-btn" onclick="startGame('space')">🚀 Space</button>
+                <button class="menu-btn" onclick="startGame('fruit')">🍎 Fruit</button>
+                <button class="menu-btn" onclick="startGame('colors')">🎨 Colors</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div class="game-meta">
+                <button class="control-btn" onclick="returnToMenu()">⬅ Back to Menu</button>
+                <div id="win-message" class="hidden">🎉 You Found All Matches! 🎉</div>
+            </div>
+            <div id="game-board" class="grid"></div>
+        </div>
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC --- */
+        const menuScreen = document.getElementById('menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameBoard = document.getElementById('game-board');
+        const winMessage = document.getElementById('win-message');
+
+        let currentCategory = '';
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let lockBoard = false;
+
+        function startGame(category) {
+            currentCategory = category;
+            menuScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            winMessage.classList.add('hidden');
+            
+            flippedCards = [];
+            matchedPairs = 0;
+            lockBoard = false;
+            gameBoard.innerHTML = ''; 
+
+            // Create 10 pairs (exactly 20 items: 1,1,2,2...10,10)
+            let cardValues = [];
+            for (let i = 1; i <= 10; i++) {
+                cardValues.push(i, i);
+            }
+
+            // Shuffle cards cleanly
+            shuffle(cardValues);
+
+            // Render cards to the screen
+            cardValues.forEach(value => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.value = value;
+
+                card.innerHTML = `
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front">
+                        <img src="images/${category}/${value}.png" alt="Card Image">
+                    </div>
+                `;
+
+                card.addEventListener('click', flipCard);
+                gameBoard.appendChild(card);
+            });
+        }
+
+        // Fixed Fisher-Yates Shuffle using safe temp variables
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                let temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === flippedCards[0]) return; 
+
+            this.classList.add('flipped');
+
+            if (flippedCards.length === 0) {
+                flippedCards.push(this);
+                return;
+            }
+
+            flippedCards.push(this);
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = flippedCards[0].dataset.value === flippedCards[1].dataset.value;
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        function disableCards() {
+            flippedCards[0].removeEventListener('click', flipCard);
+            flippedCards[1].removeEventListener('click', flipCard);
+            
+            matchedPairs++;
+            flippedCards = [];
+
+            if (matchedPairs === 10) {
+                winMessage.classList.remove('hidden');
+            }
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            setTimeout(() => {
+                flippedCards[0].classList.remove('flipped');
+                flippedCards[1].classList.remove('flipped');
+                flippedCards = [];
+                lockBoard = false;
+            }, 1000); 
+        }
+
+        function returnToMenu() {
+            gameScreen.classList.add('hidden');
+            menuScreen.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
