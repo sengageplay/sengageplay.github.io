@@ -14,19 +14,17 @@
         }
 
         body {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             background-color: #fcfcfc;
-            overflow: hidden;
             font-family: sans-serif;
         }
 
         /* Upper Game Area */
         #game-container {
             display: flex;
-            flex: 1;
-            height: 70vh;
+            height: 65vh;
             justify-content: center;
             align-items: center;
             position: relative;
@@ -34,7 +32,7 @@
 
         /* Large Canvas Face Display */
         #main-face {
-            height: 80%;
+            height: 85%;
             max-height: 450px;
             object-fit: contain;
             transition: transform 0.2s ease;
@@ -42,7 +40,7 @@
 
         /* Bottom Option Dock */
         #dock {
-            height: 30vh;
+            height: 35vh;
             background-color: #ffffff;
             border-top: 1px solid #eef0f2;
             display: flex;
@@ -52,18 +50,18 @@
             padding: 20px;
         }
 
-        /* ARASAAC Symbol Drag Items */
+        /* ARASAAC Symbol Drag Items (Bigger Size) */
         .symbol-item {
-            width: 110px;
-            height: 110px;
+            width: 140px; 
+            height: 140px; 
             background-color: #ffffff;
             border: 2px solid #e2e8f0;
-            border-radius: 16px;
+            border-radius: 20px;
             cursor: grab;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
         }
 
         .symbol-item:active {
@@ -75,6 +73,31 @@
             height: 85%;
             object-fit: contain;
             pointer-events: none;
+        }
+
+        /* Circular Restart Action Button */
+        .restart-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .restart-btn:active {
+            transform: scale(0.95);
+        }
+
+        .restart-btn svg {
+            width: 50px;
+            height: 50px;
+            fill: #718096;
         }
     </style>
 </head>
@@ -88,8 +111,16 @@
     <!-- Bottom Choices Dock -->
     <div id="dock"></div>
 
+    <!-- ARASAAC Attribution Footer -->
+    <footer style="text-align: center; padding: 40px 20px; font-size: 0.95rem; color: #a1a1aa; border-top: 2px solid #1a1a1e; margin-top: 50px; line-height: 1.5; font-family: 'Segoe UI', system-ui, sans-serif;">
+        <p style="max-width: 800px; margin: 0 auto;">
+            The pictographic symbols used are the property of the Government of Aragon and were created by Sergio Palao for 
+            <a href="http://www.arasaac.org" target="_blank" rel="noopener noreferrer" style="color: #4ade80; text-decoration: underline;">ARASAAC</a>, 
+            which distributes them under a Creative Commons BY-NC-SA License.
+        </p>
+    </footer>
+
     <script>
-        // 1. Setup your puzzle levels mapping the broken face to the correct ARASAAC piece
         const levels = [
             { face: 'no-eyes.png', correct: 'eyes.png' },
             { face: 'no-mouth.png', correct: 'mouth.png' },
@@ -98,7 +129,6 @@
             { face: 'no-ears.png', correct: 'ears.png' }
         ];
 
-        // All potential ARASAAC symbols used to mix up choices in the dock
         const allSymbols = ['eyes.png', 'mouth.png', 'eyebrows.png', 'nose.png', 'ears.png'];
         
         let currentLevelIndex = 0;
@@ -107,9 +137,8 @@
 
         function loadLevel() {
             if (currentLevelIndex >= levels.length) {
-                // Safe end state when game finishes: resets or holds on the full face
                 mainFace.src = 'full-face.png';
-                dock.innerHTML = '';
+                showRestartButton();
                 return;
             }
 
@@ -117,7 +146,6 @@
             mainFace.src = currentLevel.face;
             dock.innerHTML = '';
 
-            // Generate 3 unique choices for the bottom dock (1 correct, 2 random wrong answers)
             let choices = [currentLevel.correct];
             while (choices.length < 3) {
                 let randomSymbol = allSymbols[Math.floor(Math.random() * allSymbols.length)];
@@ -126,16 +154,13 @@
                 }
             }
             
-            // Scramble order so correct answer isn't always first
             choices.sort(() => Math.random() - 0.5);
 
-            // Spawn icons into the dock
             choices.forEach((symbolFile, index) => {
                 const item = document.createElement('div');
                 item.className = 'symbol-item';
                 item.draggable = true;
                 item.id = 'symbol-' + index;
-                // Store the raw filename data inside the element to check later
                 item.dataset.filename = symbolFile; 
                 
                 item.addEventListener('dragstart', (e) => {
@@ -148,6 +173,25 @@
                 item.appendChild(img);
                 dock.appendChild(item);
             });
+        }
+
+        function showRestartButton() {
+            dock.innerHTML = '';
+            const btn = document.createElement('div');
+            btn.className = 'restart-btn';
+            
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+            `;
+            
+            btn.addEventListener('click', () => {
+                currentLevelIndex = 0;
+                loadLevel();
+            });
+            
+            dock.appendChild(btn);
         }
 
         function allowDrop(event) {
@@ -163,13 +207,10 @@
                 const droppedSymbol = draggedElement.dataset.filename;
                 const correctSymbol = levels[currentLevelIndex].correct;
 
-                // Check if the child dragged the correct facial feature
                 if (droppedSymbol === correctSymbol) {
-                    // Success! Instantly show the complete face
                     mainFace.src = 'full-face.png';
-                    dock.innerHTML = ''; // Hide dock options during success sequence
+                    dock.innerHTML = ''; 
                     
-                    // Brief pause so the child can appreciate their complete work
                     setTimeout(() => {
                         currentLevelIndex++;
                         loadLevel();
@@ -178,7 +219,6 @@
             }
         }
 
-        // Initialize first level
         loadLevel();
     </script>
 </body>
