@@ -44,14 +44,14 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Scattered animal buttons - Now Upped to 130px */
+        /* Scattered animal buttons - 130px size */
         .animal-btn {
             position: absolute;
             width: 130px;
             height: 130px;
             background-color: #ffffff;
             border: 2px solid #e2e8f0;
-            border-radius: 24px; /* Slightly rounder corners to match the bigger size */
+            border-radius: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -111,8 +111,10 @@
 
     <script>
         const colors = ['green', 'red', 'blue', 'yellow'];
-        const animals = ['crocodile', 'elephant', 'giraffe', 'mouse', 'cat', 'dog', 'duck', 'cow', 'lion', 'sheep',];
+        // Exactly 10 distinct animals including sheep
+        const animals = ['crocodile', 'elephant', 'giraffe', 'mouse', 'cat', 'dog', 'duck', 'cow', 'lion', 'sheep'];
 
+        // Build the master list of 40 elements dynamically
         const masterDeck = [];
         colors.forEach(c => {
             animals.forEach(a => {
@@ -142,7 +144,7 @@
                 selection.sort(() => Math.random() - 0.5);
             }
 
-            // Mapped percentage coordinates with slightly larger spacing buffers to accommodate 130px size
+            // Mapped percentage coordinates tailored for 130px icons
             let coordinates = [
                 {x: 12, y: 15}, {x: 31, y: 14}, {x: 50, y: 13}, {x: 69, y: 14}, {x: 88, y: 15},
                 {x: 14, y: 40}, {x: 32, y: 36},                 {x: 68, y: 36}, {x: 86, y: 40},
