@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shape and Color Matcher - Drag & Drop</title>
+    <title>Shape and Color Matcher - Modes & Menu</title>
     <style>
         body {
             margin: 0;
@@ -24,6 +24,7 @@
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
             position: relative;
+            width: 600px;
         }
         h1 {
             margin: 0 0 10px 0;
@@ -34,56 +35,87 @@
             font-weight: bold;
             margin-bottom: 15px;
             color: #555;
+            visibility: hidden; /* Becomes visible when game starts */
         }
         canvas {
             border: 2px solid #ccc;
             border-radius: 8px;
             background-color: #ffffff;
+            display: block;
         }
-        #win-overlay {
-            display: none;
+        /* Overlays styled cleanly on top of the container */
+        .screen-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.4); /* Reduced background tint so confetti is highly visible underneath */
+            background: rgba(240, 244, 248, 0.98);
             border-radius: 12px;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            pointer-events: none; /* Allows canvas clicks to go through if needed, though buttons handle themselves */
+            box-sizing: border-box;
+            z-index: 10;
         }
-        #win-box {
+        .menu-box {
             background: white;
-            padding: 30px 50px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             text-align: center;
-            pointer-events: auto; /* Re-enable clicks inside the win popup box */
+            width: 80%;
+            max-width: 450px;
+            box-sizing: border-box;
         }
-        #win-box h2 {
-            font-size: 2.5rem;
-            color: #2b8a3e;
-            margin: 0 0 20px 0;
+        .menu-box h2 {
+            font-size: 2.2rem;
+            color: #2b3a42;
+            margin: 0 0 15px 0;
         }
-        #restart-btn {
-            padding: 12px 24px;
+        .menu-box p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .menu-btn {
+            padding: 14px 28px;
             font-size: 1.1rem;
             font-weight: bold;
             color: white;
-            background-color: #339af0;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(51, 154, 240, 0.3);
             transition: transform 0.1s, background-color 0.2s;
         }
-        #restart-btn:hover {
-            background-color: #228be6;
+        .btn-normal {
+            background-color: #2b8a3e;
+            box-shadow: 0 4px 12px rgba(43, 138, 62, 0.3);
         }
-        #restart-btn:active {
-            transform: scale(0.95);
+        .btn-normal:hover { background-color: #237032; }
+        
+        .btn-infinite {
+            background-color: #cc5de8;
+            box-shadow: 0 4px 12px rgba(204, 93, 232, 0.3);
+        }
+        .btn-infinite:hover { background-color: #ae40ca; }
+        
+        .btn-restart {
+            background-color: #339af0;
+            box-shadow: 0 4px 12px rgba(51, 154, 240, 0.3);
+        }
+        .btn-restart:hover { background-color: #228be6; }
+        
+        .menu-btn:active {
+            transform: scale(0.97);
         }
     </style>
 </head>
@@ -91,14 +123,30 @@
 
 <div id="game-container">
     <h1>Match the Hole!</h1>
-    <div id="score-board">Score: <span id="score">0</span> / 5</div>
+    <div id="score-board">Score: <span id="score">0</span></div>
     
     <canvas id="gameCanvas" width="600" height="520"></canvas>
 
-    <div id="win-overlay">
-        <div id="win-box">
-            <h2>🎉 You Win! 🎉</h2>
-            <button id="restart-btn" onclick="resetEntireGame()">Play Again</button>
+    <!-- MAIN MENU OVERLAY -->
+    <div id="main-menu" class="screen-overlay">
+        <div class="menu-box">
+            <h2>Shape Matcher</h2>
+            <p>Drag the options from the bottom row into the center cutout shape. Match the exact geometric profile and primary color to score points!</p>
+            <div class="btn-group">
+                <button class="menu-btn btn-normal" onclick="startGame('normal')">Normal Mode (First to 5)</button>
+                <button class="menu-btn btn-infinite" onclick="startGame('infinite')">Infinite Freeplay</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIN SCREEN OVERLAY -->
+    <div id="win-overlay" class="screen-overlay" style="display: none;">
+        <div class="menu-box">
+            <h2 style="color: #2b8a3e;">🎉 You Win! 🎉</h2>
+            <p>Flawless performance matching shapes under analytical constraints.</p>
+            <div class="btn-group">
+                <button class="menu-btn btn-restart" onclick="returnToMenu()">Main Menu</button>
+            </div>
         </div>
     </div>
 </div>
@@ -107,6 +155,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
+const scoreBoard = document.getElementById('score-board');
+const mainMenu = document.getElementById('main-menu');
 const winOverlay = document.getElementById('win-overlay');
 
 // Game constants
@@ -116,10 +166,13 @@ const SHAPES = ['square', 'circle', 'triangle'];
 const TARGET_RECT = { x: 200, y: 40, w: 200, h: 180 };
 const PAUSE_BTN = { x: 15, y: 15, w: 80, h: 35, radius: 6 };
 
-// Game State
+// Game Engine State Variables
 let score = 0;
+let gameActive = false; 
+let gameMode = 'normal'; 
 let gameOver = false;
 let isPaused = false;
+
 let targetColor = '';
 let targetShape = '';
 let options = [];
@@ -132,7 +185,6 @@ let feedbackText = '';
 let feedbackColor = '';
 let feedbackTimer = 0;
 
-// NEW: Confetti array
 let confettiParticles = [];
 const CONFETTI_COLORS = ['#FF4B4B', '#FFD43B', '#339AF0', '#FF922B', '#51CF66', '#CC5DE8', '#FCC419'];
 
@@ -177,13 +229,43 @@ function initRound() {
     });
 }
 
-// NEW: Generate confetti bursting from various points
+function startGame(mode) {
+    gameMode = mode;
+    score = 0;
+    gameOver = false;
+    isPaused = false;
+    gameActive = true;
+    confettiParticles = [];
+    
+    if (gameMode === 'normal') {
+        scoreElement.innerHTML = `0 <span>/ 5</span>`;
+    } else {
+        scoreElement.innerHTML = `0 <span>(Infinite)</span>`;
+    }
+    
+    mainMenu.style.display = 'none';
+    winOverlay.style.display = 'none';
+    scoreBoard.style.visibility = 'visible';
+    
+    feedbackTimer = 0;
+    initRound();
+}
+
+function returnToMenu() {
+    gameActive = false;
+    gameOver = false;
+    isPaused = false;
+    mainMenu.style.display = 'flex';
+    winOverlay.style.display = 'none';
+    scoreBoard.style.visibility = 'hidden';
+}
+
 function createConfetti() {
     confettiParticles = [];
     for (let i = 0; i < 120; i++) {
         confettiParticles.push({
             x: Math.random() * canvas.width,
-            y: Math.random() * -canvas.height - 20, // Start above screen
+            y: Math.random() * -canvas.height - 20,
             w: Math.random() * 8 + 6,
             h: Math.random() * 12 + 8,
             color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
@@ -197,27 +279,22 @@ function createConfetti() {
     }
 }
 
-// NEW: Handle drawing and calculating confetti physics
 function updateAndDrawConfetti() {
     confettiParticles.forEach(p => {
-        // Update positions
         p.y += p.speedY;
         p.wobble += p.wobbleSpeed;
         p.x += p.speedX + Math.sin(p.wobble) * 0.5;
         p.rotation += p.rotationSpeed;
 
-        // Wrap around screen if it falls off bottom
         if (p.y > canvas.height) {
             p.y = -20;
             p.x = Math.random() * canvas.width;
         }
 
-        // Draw particle
         ctx.save();
         ctx.translate(p.x + p.w/2, p.y + p.h/2);
         ctx.rotate(p.rotation * Math.PI / 180);
         ctx.fillStyle = p.color;
-        // Scale width by cosine to simulate flipping in 3D space
         ctx.fillRect(-p.w / 2 * Math.cos(p.wobble), -p.h / 2, p.w * Math.cos(p.wobble), p.h);
         ctx.restore();
     });
@@ -263,7 +340,9 @@ function drawRoundedRect(x, y, width, height, radius, fillStyle, strokeStyle) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 1. DRAW TARGET CARD WITH A PHYSICAL HOLE
+    if (!gameActive) return; 
+
+    // 1. TARGET CARD
     ctx.save();
     ctx.fillStyle = PRIMARY_COLORS[targetColor];
     ctx.fillRect(TARGET_RECT.x, TARGET_RECT.y, TARGET_RECT.w, TARGET_RECT.h);
@@ -278,7 +357,7 @@ function draw() {
     ctx.lineWidth = 2;
     ctx.strokeRect(TARGET_RECT.x, TARGET_RECT.y, TARGET_RECT.w, TARGET_RECT.h);
     
-    // Separator Line
+    // Split line
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -286,7 +365,7 @@ function draw() {
     ctx.lineTo(570, 295);
     ctx.stroke();
 
-    // 2. DRAW DRAGGABLE CHOICES
+    // 2. CHOICES ROW
     options.forEach(opt => {
         if (opt !== selectedOption) {
             defineShapePath(opt.x, opt.y, 55, opt.shape);
@@ -309,7 +388,7 @@ function draw() {
         ctx.restore();
     }
     
-    // 3. DRAW SCORE FEEDBACK TEXT
+    // 3. TEXT NOTIFICATIONS
     if (feedbackTimer > 0) {
         ctx.fillStyle = feedbackColor;
         ctx.font = "bold 22px system-ui, sans-serif";
@@ -318,7 +397,7 @@ function draw() {
         feedbackTimer--;
     }
 
-    // 4. DRAW PAUSE BUTTON (Only if game is active)
+    // 4. ACTION BAR (PAUSE SYSTEM CONTROL)
     if (!gameOver) {
         drawRoundedRect(PAUSE_BTN.x, PAUSE_BTN.y, PAUSE_BTN.w, PAUSE_BTN.h, PAUSE_BTN.radius, isPaused ? "#495057" : "#e9ecef", "#ced4da");
         ctx.fillStyle = isPaused ? "#ffffff" : "#495057";
@@ -329,7 +408,7 @@ function draw() {
         ctx.textBaseline = "alphabetic";
     }
 
-    // 5. PAUSE SCREEN OVERLAY
+    // 5. PAUSED MASK LAYER RENDER
     if (isPaused) {
         ctx.fillStyle = "rgba(240, 244, 248, 0.75)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -348,7 +427,7 @@ function draw() {
         ctx.fillText("GAME PAUSED", canvas.width / 2, canvas.height / 2);
     }
 
-    // 6. WINNING CONFETTI ENGINE RUNNER
+    // 6. CONFETTI ANIMATION RUNNER
     if (gameOver) {
         updateAndDrawConfetti();
     }
@@ -363,7 +442,7 @@ function getMousePos(e) {
 }
 
 canvas.addEventListener('mousedown', function(e) {
-    if (gameOver) return;
+    if (!gameActive || gameOver) return;
     const pos = getMousePos(e);
     
     if (pos.x >= PAUSE_BTN.x && pos.x <= PAUSE_BTN.x + PAUSE_BTN.w &&
@@ -391,14 +470,14 @@ canvas.addEventListener('mousedown', function(e) {
 });
 
 canvas.addEventListener('mousemove', function(e) {
-    if (!selectedOption || gameOver || isPaused) return;
+    if (!selectedOption || gameOver || isPaused || !gameActive) return;
     const pos = getMousePos(e);
     selectedOption.x = pos.x - dragOffsetX;
     selectedOption.y = pos.y - dragOffsetY;
 });
 
 canvas.addEventListener('mouseup', function(e) {
-    if (!selectedOption || gameOver || isPaused) return;
+    if (!selectedOption || gameOver || isPaused || !gameActive) return;
     
     const targetCenterX = TARGET_RECT.x + TARGET_RECT.w / 2;
     const targetCenterY = TARGET_RECT.y + TARGET_RECT.h / 2;
@@ -407,14 +486,20 @@ canvas.addEventListener('mouseup', function(e) {
     if (distToHole < 70) { 
         if (selectedOption.isCorrect) {
             score++;
-            scoreElement.innerText = score;
+            
+            if (gameMode === 'normal') {
+                scoreElement.innerHTML = `${score} <span>/ 5</span>`;
+            } else {
+                scoreElement.innerHTML = `${score} <span>(Infinite)</span>`;
+            }
+            
             feedbackText = "✨ Match Found! Excellent! ✨";
             feedbackColor = "#2B8A3E";
             feedbackTimer = 60;
             
-            if (score >= 5) {
+            if (gameMode === 'normal' && score >= 5) {
                 gameOver = true;
-                createConfetti(); // Trigger the confetti particle build
+                createConfetti();
                 winOverlay.style.display = 'flex';
             } else {
                 initRound();
@@ -434,23 +519,11 @@ canvas.addEventListener('mouseup', function(e) {
     selectedOption = null;
 });
 
-function resetEntireGame() {
-    score = 0;
-    gameOver = false;
-    isPaused = false;
-    confettiParticles = [];
-    scoreElement.innerText = score;
-    winOverlay.style.display = 'none';
-    feedbackTimer = 0;
-    initRound();
-}
-
 function gameLoop() {
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-initRound();
 gameLoop();
 </script>
 
