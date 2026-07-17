@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daytime Solid-Color Sandbox</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #bae6fd;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Hotbar UI - Enlarged for better accessibility */
+        #hotbar {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 140px; 
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 10;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            align-items: center;
+        }
+
+        .hotbar-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-label {
+            font-size: 12px; 
+            font-weight: bold;
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        /* Physics Mode Toggle buttons - Enlarged with images inside */
+        .mode-btn {
+            width: 100%;
+            padding: 10px 6px; 
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 10px;
+            font-size: 14px; 
+            font-weight: bold;
+            color: #334155;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        /* Styling to support images gracefully even if failing to load */
+        .mode-btn img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+        }
+
+        .mode-btn.active {
+            background: #0284c7;
+            color: white;
+            border-color: #0284c7;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+        }
+
+        /* Color Slots - Enlarged */
+        .color-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .color-slot {
+            width: 100%;
+            height: 52px; 
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px;
+            gap: 10px;
+            transition: all 0.15s ease;
+        }
+
+        .color-slot:hover {
+            border-color: #0284c7;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .color-slot.active {
+            border-color: #0284c7;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(2, 132, 199, 0.3);
+        }
+
+        .color-circle {
+            width: 28px; 
+            height: 28px; 
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+
+        .color-slot span {
+            font-size: 13px; 
+            color: #334155;
+            font-weight: bold;
+        }
+
+        /* Top Bar / Reset Button */
+        #top-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            left: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #instructions {
+            color: #334155;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        #reset-btn {
+            pointer-events: auto;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        #reset-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+        
+        #reset-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Bottom Attribution Legal Text */
+        #attribution {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-size: 11px;
+            color: #475569;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            border-radius: 12px;
+            text-align: center;
+            pointer-events: none;
+            max-width: 85%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="top-bar">
+            <div id="instructions">Set Element & Color • Click/Drag to drop</div>
+            <button id="reset-btn">Reset Grid</button>
+        </div>
+        
+        <!-- Side Hotbar with Physics mode selection & 6 Colors -->
+        <div id="hotbar">
+            <!-- Mode Switcher -->
+            <div class="hotbar-section">
+                <span class="section-label">Element</span>
+                <!-- Updated image source path with %20 encoding for the space -->
+                <button class="mode-btn active" id="mode-sand" data-mode="sand">
+                    <img src="gamesand.png" alt="Sand">
+                    <span>Sand</span>
+                </button>
+                <button class="mode-btn" id="mode-water" data-mode="water">
+                    <img src="water.png" alt="Water">
+                    <span>Water</span>
+                </button>
+            </div>
+
+            <!-- Colors -->
+            <div class="hotbar-section" style="width: 100%;">
+                <span class="section-label">Color</span>
+                <div class="color-grid">
+                    <div class="color-slot active" data-color="pink">
+                        <div class="color-circle" style="background-color: #f472b6;"></div>
+                        <span>Pink</span>
+                    </div>
+                    <div class="color-slot" data-color="red">
+                        <div class="color-circle" style="background-color: #ef4444;"></div>
+                        <span>Red</span>
+                    </div>
+                    <div class="color-slot" data-color="blue">
+                        <div class="color-circle" style="background-color: #3b82f6;"></div>
+                        <span>Blue</span>
+                    </div>
+                    <div class="color-slot" data-color="green">
+                        <div class="color-circle" style="background-color: #22c55e;"></div>
+                        <span>Green</span>
+                    </div>
+                    <div class="color-slot" data-color="orange">
+                        <div class="color-circle" style="background-color: #f97316;"></div>
+                        <span>Orange</span>
+                    </div>
+                    <div class="color-slot" data-color="magenta">
+                        <div class="color-circle" style="background-color: #d946ef;"></div>
+                        <span>Magenta</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic License Attribution Text at the Bottom -->
+        <div id="attribution">
+            The pictographic symbols used are the property of the Government of Aragon and were created by Sergio Palao for ARASAAC, which distributes them under a Creative Commons BY-NC-SA License.
+        </div>
+
+        <canvas id="sandboxCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('sandboxCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Scale factors
+        const scale = 4; 
+        let width, height, cols, rows;
+        let grid;
+
+        // Current Selected Settings
+        let selectedPhysics = 'sand'; // 'sand' or 'water'
+        let selectedColor = 'pink';   // pink, red, blue, green, orange, magenta
+
+        // Colors mapping: now mapped to single, vibrant, solid Hex colors
+        const colorPalette = {
+            'pink':    '#f472b6',
+            'red':     '#ef4444',
+            'blue':    '#3b82f6',
+            'green':   '#22c55e',
+            'orange':  '#f97316',
+            'magenta': '#d946ef'
+        };
+
+        // Number mapping for grid elements (Sand: 1-6, Water: 11-16)
+        const colorIds = {
+            'pink': 1, 'red': 2, 'blue': 3, 'green': 4, 'orange': 5, 'magenta': 6
+        };
+
+        // Mouse/Touch tracking
+        let isDrawing = false;
+        let mouseX = 0;
+        let mouseY = 0;
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            width = canvas.width;
+            height = canvas.height;
+
+            cols = Math.floor(width / scale);
+            rows = Math.floor(height / scale);
+
+            grid = makeGrid(cols, rows);
+        }
+
+        function makeGrid(c, r) {
+            let arr = new Array(c);
+            for (let i = 0; i < arr.length; i++) {
+                arr[i] = new Array(r).fill(0);
+            }
+            return arr;
+        }
+
+        function drawBackground() {
+            // Bright daytime sky gradient
+            let skyGrd = ctx.createLinearGradient(0, 0, 0, height);
+            skyGrd.addColorStop(0, "#bae6fd"); 
+            skyGrd.addColorStop(0.7, "#e0f2fe");
+            skyGrd.addColorStop(1, "#f0f9ff");
+            ctx.fillStyle = skyGrd;
+            ctx.fillRect(0, 0, width, height);
+
+            // Bright Golden Daytime Sun
+            ctx.beginPath();
+            ctx.arc(width / 2, height * 0.45, 110, 0, Math.PI * 2);
+            let sunGrd = ctx.createRadialGradient(width / 2, height * 0.45, 10, width / 2, height * 0.45, 110);
+            sunGrd.addColorStop(0, "#fffde7");
+            sunGrd.addColorStop(0.2, "#fef08a");
+            sunGrd.addColorStop(1, "#facc15");
+            ctx.fillStyle = sunGrd;
+            ctx.shadowBlur = 50;
+            ctx.shadowColor = "rgba(253, 224, 71, 0.6)";
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset shadow glow
+
+            // Simple Grassy Hills in the background distance
+            ctx.fillStyle = "#15803d"; 
+            ctx.beginPath();
+            ctx.moveTo(0, height - 40);
+            for (let x = 0; x <= width; x += 30) {
+                ctx.lineTo(x, height - 40 + Math.sin(x * 0.008) * 8);
+            }
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Cellular Automata Physics loop
+        function updatePhysics() {
+            let nextGrid = makeGrid(cols, rows);
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    let state = grid[i][j];
+                    if (state === 0) continue;
+
+                    let dir = Math.random() < 0.5 ? 1 : -1;
+
+                    // Sand elements (ID 1 - 6)
+                    if (state >= 1 && state <= 6) {
+                        if (j + 1 < rows && grid[i][j + 1] === 0 && nextGrid[i][j + 1] === 0) {
+                            nextGrid[i][j + 1] = state;
+                        } else if (j + 1 < rows && i + dir >= 0 && i + dir < cols && grid[i + dir][j + 1] === 0 && nextGrid[i + dir][j + 1] === 0) {
+                            nextGrid[i + dir][j + 1] = state;
+                        } else if (j + 1 < rows && i - dir >= 0 && i - dir < cols && grid[i - dir][j + 1] === 0 && nextGrid[i - dir][j + 1] === 0) {
+                            nextGrid[i - dir][j + 1] = state;
+                        } else {
+                            nextGrid[i][j] = state;
+                        }
+                    }
+                    
+                    // Water elements (ID 11 - 16)
+                    else if (state >= 11 && state <= 16) {
+                        if (j + 1 < rows && grid[i][j + 1] === 0 && nextGrid[i][j + 1] === 0) {
+                            nextGrid[i][j + 1] = state;
+                        } else if (j + 1 < rows && i + dir >= 0 && i + dir < cols && grid[i + dir][j + 1] === 0 && nextGrid[i + dir][j + 1] === 0) {
+                            nextGrid[i + dir][j + 1] = state;
+                        } else if (j + 1 < rows && i - dir >= 0 && i - dir < cols && grid[i - dir][j + 1] === 0 && nextGrid[i - dir][j + 1] === 0) {
+                            nextGrid[i - dir][j + 1] = state;
+                        } 
+                        // Horizontal water dispersion
+                        else if (i + dir >= 0 && i + dir < cols && grid[i + dir][j] === 0 && nextGrid[i + dir][j] === 0) {
+                            nextGrid[i + dir][j] = state;
+                        } else if (i - dir >= 0 && i - dir < cols && grid[i - dir][j] === 0 && nextGrid[i - dir][j] === 0) {
+                            nextGrid[i - dir][j] = state;
+                        } else {
+                            nextGrid[i][j] = state;
+                        }
+                    }
+                }
+            }
+            grid = nextGrid;
+        }
+
+        // Draw active sandbox colors (simplified for flat solid colors)
+        function drawElements() {
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    let state = grid[i][j];
+                    if (state === 0) continue;
+
+                    let colorKey = '';
+                    let isWater = state >= 11;
+                    let val = isWater ? state - 10 : state;
+
+                    // Resolve key
+                    for (let key in colorIds) {
+                        if (colorIds[key] === val) {
+                            colorKey = key;
+                            break;
+                        }
+                    }
+
+                    if (colorKey && colorPalette[colorKey]) {
+                        // Render with clean, solid, flat colors
+                        ctx.fillStyle = colorPalette[colorKey];
+                        ctx.fillRect(i * scale, j * scale, scale, scale);
+                    }
+                }
+            }
+        }
+
+        function loop() {
+            drawBackground();
+
+            if (isDrawing) {
+                let gridX = Math.floor(mouseX / scale);
+                let gridY = Math.floor(mouseY / scale);
+                
+                // Set ID offset: Sand ranges from 1-6, Water ranges from 11-16
+                let baseId = colorIds[selectedColor];
+                let activeId = selectedPhysics === 'sand' ? baseId : baseId + 10;
+
+                let radius = selectedPhysics === 'water' ? 4 : 3;
+                for (let x = -radius; x <= radius; x++) {
+                    for (let y = -radius; y <= radius; y++) {
+                        if (Math.random() > 0.4) {
+                            let cx = gridX + x;
+                            let cy = gridY + y;
+                            if (cx >= 0 && cx < cols && cy >= 0 && cy < rows) {
+                                grid[cx][cy] = activeId;
+                            }
+                        }
+                    }
+                }
+            }
+
+            updatePhysics();
+            drawElements();
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- Interaction UI Elements Event Listeners ---
+
+        // Physics Mode Toggle UI (Sand / Water switcher)
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                const target = e.currentTarget;
+                target.classList.add('active');
+                selectedPhysics = target.getAttribute('data-mode');
+            });
+        });
+
+        // Color Toggles UI
+        document.querySelectorAll('.color-slot').forEach(slot => {
+            slot.addEventListener('click', (e) => {
+                document.querySelectorAll('.color-slot').forEach(s => s.classList.remove('active'));
+                const target = e.currentTarget;
+                target.classList.add('active');
+                selectedColor = target.getAttribute('data-color');
+            });
+        });
+
+        // Clear Sandbox
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            grid = makeGrid(cols, rows);
+        });
+
+        // Mouse & Touch coordinate handling
+        function updateMouseCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            mouseX = clientX - rect.left;
+            mouseY = clientY - rect.top;
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#hotbar') || e.target.closest('#reset-btn')) return;
+            isDrawing = true;
+            updateMouseCoords(e);
+        });
+        window.addEventListener('mousemove', (e) => { if (isDrawing) updateMouseCoords(e); });
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.target.closest('#hotbar') || e.target.closest('#reset-btn')) return;
+            isDrawing = true;
+            updateMouseCoords(e);
+        }, { passive: true });
+        window.addEventListener('touchmove', (e) => { if (isDrawing) updateMouseCoords(e); }, { passive: true });
+        window.addEventListener('touchend', () => isDrawing = false);
+
+        window.addEventListener('resize', () => {
+            let oldGrid = grid, oldCols = cols, oldRows = rows;
+            init();
+            for(let i = 0; i < Math.min(oldCols, cols); i++){
+                for(let j = 0; j < Math.min(oldRows, rows); j++){
+                    grid[i][j] = oldGrid[i][j];
+                }
+            }
+        });
+
+        init();
+        loop();
+    </script>
+</body>
+</html>
