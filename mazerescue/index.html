@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Fairytale Maze Rescue! - Sengage</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        /* Character Selection Screen */
+        #select-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        #select-screen h1 {
+            font-size: 2rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        #select-screen p {
+            font-size: 1.2rem;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        .hero-cards {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background: white;
+            border: 4px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 20px;
+            width: 160px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .card:hover, .card:active {
+            transform: scale(1.05);
+            border-color: #3b82f6;
+        }
+
+        .card img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+
+        .card h3 {
+            margin: 10px 0 0 0;
+            color: #1e293b;
+            font-size: 1.2rem;
+        }
+
+        /* Top Bar */
+        .header {
+            margin-top: 10px;
+            background: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #1e293b;
+        }
+
+        .level-badge {
+            background-color: #f59e0b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn {
+            background-color: #64748b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .sound-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Game Stage Boundaries */
+        #maze-container {
+            position: relative;
+            background: white;
+            border: 6px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            margin: 10px 0;
+        }
+
+        .cell {
+            position: absolute;
+            box-sizing: border-box;
+            border-color: #64748b;
+            border-style: solid;
+        }
+
+        /* Sprite styling with clean transparency blend */
+        .sprite {
+            position: absolute;
+            z-index: 5;
+            transition: all 0.15s ease-out;
+            mix-blend-mode: multiply;
+            padding: 3px;
+        }
+
+        .sprite img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+
+        /* On-Screen Touch / Smartboard D-Pad */
+        .controls-panel {
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(3, 65px);
+            grid-template-rows: repeat(2, 55px);
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .d-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .d-btn:active {
+            background: #1d4ed8;
+            transform: scale(0.95);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+
+        /* Confetti Overlay Canvas */
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Selection Menu Overlay -->
+    <div id="select-screen">
+        <h1>👑 Choose Your Hero!</h1>
+        <p>Who will save the day?</p>
+        
+        <div class="hero-cards">
+            <div class="card" onclick="selectHero('prince')">
+                <img src="pecs_symbols/prince.png" alt="Prince">
+                <h3>Prince</h3>
+            </div>
+            <div class="card" onclick="selectHero('princess')">
+                <img src="pecs_symbols/princess.png" alt="Princess">
+                <h3>Princess</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Main Game Header -->
+    <div class="header">
+        <button class="nav-btn" onclick="showMainMenu()">🏠 Menu</button>
+        <h1 id="game-title">Rescue Game</h1>
+        <div class="level-badge" id="level-indicator">Level 1</div>
+        <button class="sound-btn" id="audio-toggle">🔊 Sound ON</button>
+    </div>
+
+    <!-- 3. Maze Stage -->
+    <div id="maze-container"></div>
+
+    <!-- 4. D-Pad Controls -->
+    <div class="controls-panel">
+        <button class="d-btn btn-up" onclick="moveHero(0, -1)">▲</button>
+        <button class="d-btn btn-left" onclick="moveHero(-1, 0)">◄</button>
+        <button class="d-btn btn-down" onclick="moveHero(0, 1)">▼</button>
+        <button class="d-btn btn-right" onclick="moveHero(1, 0)">►</button>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        const EASY_SIZES = [
+            { cols: 5, rows: 5 },
+            { cols: 6, rows: 6 },
+            { cols: 7, rows: 7 }
+        ];
+
+        let chosenHero = 'prince'; // 'prince' or 'princess'
+        let targetGoal = 'princess'; // opposite of hero
+        let levelNumber = 1;
+        let isTransitioning = false;
+        let grid = [], cols, rows, cellSize;
+        
+        let hero = { x: 0, y: 0, el: null };
+        let goal = { x: 0, y: 0, el: null };
+        let dragon = { x: -1, y: -1, el: null, active: false };
+
+        const container = document.getElementById('maze-container');
+
+        // Web Audio Synthesizer
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        document.getElementById('audio-toggle').addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            document.getElementById('audio-toggle').textContent = soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
+            document.getElementById('audio-toggle').style.backgroundColor = soundEnabled ? "#3b82f6" : "#64748b";
+        });
+
+        function selectHero(type) {
+            chosenHero = type;
+            targetGoal = (type === 'prince') ? 'princess' : 'prince';
+            
+            // Update Title Text dynamically
+            const titleText = (type === 'prince') ? "👑 Rescue the Princess!" : "👑 Rescue the Prince!";
+            document.getElementById('game-title').textContent = titleText;
+
+            // Hide menu screen and launch
+            document.getElementById('select-screen').style.display = 'none';
+            levelNumber = 1;
+            initLevel();
+        }
+
+        function showMainMenu() {
+            document.getElementById('select-screen').style.display = 'flex';
+        }
+
+        function playFanfareSound() {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const notes = [261.63, 329.63, 392.00, 523.25];
+                const times = [0, 0.12, 0.24, 0.36];
+
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + times[idx]);
+
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + times[idx]);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + times[idx] + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(audioCtx.currentTime + times[idx]);
+                    osc.stop(audioCtx.currentTime + times[idx] + 0.35);
+                });
+            } catch(e) {}
+        }
+
+        function initLevel() {
+            isTransitioning = false;
+            container.innerHTML = '';
+            
+            const sizeCfg = EASY_SIZES[(levelNumber - 1) % EASY_SIZES.length];
+            cols = sizeCfg.cols;
+            rows = sizeCfg.rows;
+
+            document.getElementById('level-indicator').textContent = `Level ${levelNumber}`;
+
+            const maxPixelDim = Math.min(window.innerWidth * 0.88, window.innerHeight * 0.58);
+            cellSize = Math.floor(maxPixelDim / Math.max(cols, rows));
+
+            container.style.width = `${cols * cellSize}px`;
+            container.style.height = `${rows * cellSize}px`;
+
+            dragon.active = (levelNumber % 3 === 0);
+
+            generateGuaranteedMaze();
+            renderMazeWalls();
+
+            // Spawn Selected Hero at Top-Left
+            hero.x = 0; hero.y = 0;
+            hero.el = createSprite(`${chosenHero}.png`);
+
+            // Spawn Rescue Target at Bottom-Right
+            goal.x = cols - 1; goal.y = rows - 1;
+            goal.el = createSprite(`${targetGoal}.png`);
+
+            if (dragon.active) {
+                dragon.el = createSprite('dragon.png');
+            }
+
+            updatePositions();
+        }
+
+        function createSprite(filename) {
+            const div = document.createElement('div');
+            div.className = 'sprite';
+            div.style.width = `${cellSize}px`;
+            div.style.height = `${cellSize}px`;
+            
+            const img = document.createElement('img');
+            img.src = `pecs_symbols/${filename}`;
+            div.appendChild(img);
+            
+            container.appendChild(div);
+            return div;
+        }
+
+        function generateGuaranteedMaze() {
+            let solvable = false;
+
+            while (!solvable) {
+                buildRawMaze();
+
+                if (dragon.active) {
+                    const potentialDragonTiles = [
+                        { x: cols - 1, y: rows - 2 },
+                        { x: cols - 2, y: rows - 1 }
+                    ];
+
+                    for (let tile of potentialDragonTiles) {
+                        dragon.x = tile.x;
+                        dragon.y = tile.y;
+                        if (isPathAvailable(0, 0, cols - 1, rows - 1, dragon.x, dragon.y)) {
+                            solvable = true;
+                            break;
+                        }
+                    }
+                } else {
+                    solvable = true;
+                }
+            }
+        }
+
+        function buildRawMaze() {
+            grid = [];
+            for (let r = 0; r < rows; r++) {
+                let row = [];
+                for (let c = 0; c < cols; c++) {
+                    row.push({ c, r, walls: [true, true, true, true], visited: false });
+                }
+                grid.push(row);
+            }
+
+            let stack = [];
+            let current = grid[0][0];
+            current.visited = true;
+
+            while (true) {
+                let neighbors = getUnvisitedNeighbors(current);
+                if (neighbors.length > 0) {
+                    let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    removeWalls(current, next);
+                    stack.push(current);
+                    current = next;
+                    current.visited = true;
+                } else if (stack.length > 0) {
+                    current = stack.pop();
+                } else {
+                    break;
+                }
+            }
+        }
+
+        function getUnvisitedNeighbors(cell) {
+            let n = [];
+            let { c, r } = cell;
+            if (r > 0 && !grid[r - 1][c].visited) n.push(grid[r - 1][c]);
+            if (c < cols - 1 && !grid[r][c + 1].visited) n.push(grid[r][c + 1]);
+            if (r < rows - 1 && !grid[r + 1][c].visited) n.push(grid[r + 1][c]);
+            if (c > 0 && !grid[r][c - 1].visited) n.push(grid[r][c - 1]);
+            return n;
+        }
+
+        function removeWalls(a, b) {
+            let dx = a.c - b.c;
+            if (dx === 1) { a.walls[3] = false; b.walls[1] = false; }
+            else if (dx === -1) { a.walls[1] = false; b.walls[3] = false; }
+            let dy = a.r - b.r;
+            if (dy === 1) { a.walls[0] = false; b.walls[2] = false; }
+            else if (dy === -1) { a.walls[2] = false; b.walls[0] = false; }
+        }
+
+        // BFS path solver to guarantee maze is solvable avoiding the dragon
+        function isPathAvailable(startX, startY, goalX, goalY, blockX, blockY) {
+            let queue = [{ x: startX, y: startY }];
+            let visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+            visited[startY][startX] = true;
+
+            while (queue.length > 0) {
+                let { x, y } = queue.shift();
+                if (x === goalX && y === goalY) return true;
+
+                let cell = grid[y][x];
+                // Top, Right, Bottom, Left
+                let moves = [
+                    { dx: 0, dy: -1, wallIdx: 0 },
+                    { dx: 1, dy: 0, wallIdx: 1 },
+                    { dx: 0, dy: 1, wallIdx: 2 },
+                    { dx: -1, dy: 0, wallIdx: 3 }
+                ];
+
+                for (let m of moves) {
+                    let nx = x + m.dx;
+                    let ny = y + m.dy;
+
+                    if (!cell.walls[m.wallIdx] && nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+                        if (nx === blockX && ny === blockY) continue; // Blocked by dragon
+                        if (!visited[ny][nx]) {
+                            visited[ny][nx] = true;
+                            queue.push({ x: nx, y: ny });
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function renderMazeWalls() {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = grid[r][c];
+                    const div = document.createElement('div');
+                    div.className = 'cell';
+                    div.style.width = `${cellSize}px`;
+                    div.style.height = `${cellSize}px`;
+                    div.style.left = `${c * cellSize}px`;
+                    div.style.top = `${r * cellSize}px`;
+
+                    const w = cell.walls;
+                    div.style.borderTopWidth = w[0] ? '3px' : '0';
+                    div.style.borderRightWidth = w[1] ? '3px' : '0';
+                    div.style.borderBottomWidth = w[2] ? '3px' : '0';
+                    div.style.borderLeftWidth = w[3] ? '3px' : '0';
+
+                    container.appendChild(div);
+                }
+            }
+        }
+
+        function updatePositions() {
+            hero.el.style.left = `${hero.x * cellSize}px`;
+            hero.el.style.top = `${hero.y * cellSize}px`;
+
+            goal.el.style.left = `${goal.x * cellSize}px`;
+            goal.el.style.top = `${goal.y * cellSize}px`;
+
+            if (dragon.active && dragon.el) {
+                dragon.el.style.left = `${dragon.x * cellSize}px`;
+                dragon.el.style.top = `${dragon.y * cellSize}px`;
+            }
+        }
+
+        function moveHero(dx, dy) {
+            if (isTransitioning) return;
+
+            let current = grid[hero.y][hero.x];
+
+            // Determine direction wall index: 0: Up, 1: Right, 2: Down, 3: Left
+            let wallIdx = -1;
+            if (dy === -1) wallIdx = 0;
+            if (dx === 1) wallIdx = 1;
+            if (dy === 1) wallIdx = 2;
+            if (dx === -1) wallIdx = 3;
+
+            if (!current.walls[wallIdx]) {
+                hero.x += dx;
+                hero.y += dy;
+                updatePositions();
+
+                // Dragon Collision Check
+                if (dragon.active && hero.x === dragon.x && hero.y === dragon.y) {
+                    hero.x = 0;
+                    hero.y = 0;
+                    updatePositions();
+                    return;
+                }
+
+                // Victory Check
+                if (hero.x === goal.x && hero.y === goal.y) {
+                    isTransitioning = true;
+                    playFanfareSound();
+                    launchConfetti();
+                    setTimeout(() => {
+                        levelNumber++;
+                        initLevel();
+                    }, 1500);
+                }
+            }
+        }
+
+        // Keyboard Controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') moveHero(0, -1);
+            if (e.key === 'ArrowDown' || e.key === 's') moveHero(0, 1);
+            if (e.key === 'ArrowLeft' || e.key === 'a') moveHero(-1, 0);
+            if (e.key === 'ArrowRight' || e.key === 'd') moveHero(1, 0);
+        });
+
+        // Simple Canvas Confetti Effect
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f59e0b', '#3b82f6', '#ec4899', '#10b981', '#8b5cf6'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.8) * 12,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4,
+                    life: 60
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.3; // Gravity
+                        p.life--;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, p.size, p.size);
+                        active = true;
+                    }
+                });
+
+                if (active) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
