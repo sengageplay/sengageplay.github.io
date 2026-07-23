@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Splat the Colors! - Sengage</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Top Header & Audio Control Bar */
+        .header {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #2c3e50;
+        }
+
+        .sound-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: background 0.2s;
+        }
+
+        .sound-btn:hover {
+            background-color: #2563eb;
+        }
+
+        /* Game Arena */
+        #game-stage {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Color / Splat Target Styling */
+        .color-target {
+            position: absolute;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s ease-out;
+            padding: 5px;
+            mix-blend-mode: multiply;
+        }
+
+        .color-target img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+
+        /* Pop & Splat Animation Effects */
+        .splatted {
+            animation: splatPop 0.5s forwards ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes splatPop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.9; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🎨 Tap a Color to Splat It!</h1>
+        <button class="sound-btn" id="audio-toggle">🔊 Turn On Sound</button>
+    </div>
+
+    <div id="game-stage"></div>
+
+    <script>
+        const COLOR_LIST = ["red", "blue", "green", "orange", "yellow", "purple", "pink"];
+        const MAX_BALLS = 10;
+        const activeTargets = [];
+        const stage = document.getElementById('game-stage');
+
+        // Web Audio API Synthesizer
+        let audioCtx = null;
+        let soundEnabled = false;
+        let ambientInterval = null;
+
+        document.getElementById('audio-toggle').addEventListener('click', () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('audio-toggle');
+            
+            if (soundEnabled) {
+                btn.textContent = "🔇 Sound ON";
+                btn.style.backgroundColor = "#10b981";
+                startBubblySoundtrack();
+            } else {
+                btn.textContent = "🔊 Turn On Sound";
+                btn.style.backgroundColor = "#3b82f6";
+                stopBubblySoundtrack();
+            }
+        });
+
+        function playBubbleSound(freq = 400, type = 'sine') {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 2.2, audioCtx.currentTime + 0.15);
+
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function startBubblySoundtrack() {
+            if (ambientInterval) clearInterval(ambientInterval);
+            ambientInterval = setInterval(() => {
+                if (!soundEnabled) return;
+                const randomFreq = 300 + Math.random() * 600;
+                playBubbleSound(randomFreq, 'sine');
+            }, 800);
+        }
+
+        function stopBubblySoundtrack() {
+            if (ambientInterval) clearInterval(ambientInterval);
+        }
+
+        class ColorBall {
+            constructor() {
+                this.color = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
+                this.isSplatted = false;
+                
+                // 1. HUMUNGOUS SIZES (Ranges from small 60px to massive 320px!)
+                const sizeRoll = Math.random();
+                if (sizeRoll < 0.2) {
+                    this.size = Math.floor(Math.random() * 40) + 60; // Small (60px - 100px)
+                } else if (sizeRoll < 0.75) {
+                    this.size = Math.floor(Math.random() * 80) + 120; // Medium-Large (120px - 200px)
+                } else {
+                    this.size = Math.floor(Math.random() * 100) + 220; // HUMUNGOUS (220px - 320px!)
+                }
+                
+                // Spawn within safe boundaries
+                this.x = Math.random() * (window.innerWidth - this.size - 20) + 10;
+                this.y = Math.random() * (window.innerHeight - this.size - 90) + 80;
+                
+                // 2. EXTREME SPEEDS (Normal drift vs. RARE REALLY FAST SPEED)
+                const isSuperFast = Math.random() < 0.15; // 15% chance to spawn a hyper-fast ball
+                let speedMultiplier;
+
+                if (isSuperFast) {
+                    speedMultiplier = Math.random() * 6 + 10; // Extremely Fast!
+                } else {
+                    speedMultiplier = Math.random() * 2 + 0.5; // Normal gentle drift
+                }
+
+                // Random angle direction
+                const angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(angle) * speedMultiplier;
+                this.vy = Math.sin(angle) * speedMultiplier;
+
+                // Create HTML Element
+                this.element = document.createElement('div');
+                this.element.className = 'color-target';
+                this.element.style.width = `${this.size}px`;
+                this.element.style.height = `${this.size}px`;
+                
+                this.img = document.createElement('img');
+                this.img.src = `pecs_symbols/${this.color}.png`;
+                this.element.appendChild(this.img);
+
+                this.element.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    this.splat();
+                });
+
+                stage.appendChild(this.element);
+                this.updatePosition();
+            }
+
+            move() {
+                if (this.isSplatted) return;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Clean edge bouncing based on individual size
+                if (this.x <= 5 || this.x >= window.innerWidth - this.size - 5) this.vx *= -1;
+                if (this.y <= 80 || this.y >= window.innerHeight - this.size - 5) this.vy *= -1;
+
+                this.updatePosition();
+            }
+
+            updatePosition() {
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+            }
+
+            splat() {
+                if (this.isSplatted) return;
+                this.isSplatted = true;
+
+                playBubbleSound(700 + Math.random() * 300, 'triangle');
+
+                this.img.src = `pecs_symbols/${this.color}_splat.png`;
+                this.element.classList.add('splatted');
+
+                setTimeout(() => {
+                    if (this.element.parentNode) {
+                        this.element.parentNode.removeChild(this.element);
+                    }
+                    const index = activeTargets.indexOf(this);
+                    if (index > -1) activeTargets.splice(index, 1);
+                }, 500);
+            }
+        }
+
+        function maintainTargetCount() {
+            if (activeTargets.length < MAX_BALLS) {
+                activeTargets.push(new ColorBall());
+            }
+        }
+
+        function animate() {
+            activeTargets.forEach(ball => ball.move());
+            requestAnimationFrame(animate);
+        }
+
+        setInterval(maintainTargetCount, 500);
+        animate();
+    </script>
+</body>
+</html>
