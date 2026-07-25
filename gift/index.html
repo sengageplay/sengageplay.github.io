@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>PECS Gift Waiting Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f0f8ff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Header Bar / PECS Banner */
+    .header-bar {
+      width: 100%;
+      background-color: #4a90e2;
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+    }
+
+    .pecs-symbol {
+      width: 65px;
+      height: 65px;
+      background: white;
+      border: 3px solid #333;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 4px;
+    }
+
+    .pecs-symbol img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .instruction-text {
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    /* Play Area */
+    .game-area {
+      position: relative;
+      width: 100vw;
+      height: calc(100vh - 90px);
+      overflow: hidden;
+    }
+
+    /* Floating DVD-Style Gift Container */
+    .gift-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 180px;
+      height: 180px;
+      cursor: pointer;
+      perspective: 1000px;
+      will-change: transform;
+    }
+
+    /* 3D Card Flip Structure */
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+    }
+
+    .card-inner.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border: 4px solid #333;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      padding: 8px;
+    }
+
+    .card-front {
+      background-color: #ffffff;
+    }
+
+    .card-front img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+    }
+
+    .card-back {
+      background-color: #ffffff;
+      transform: rotateY(180deg);
+    }
+
+    .card-back img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+    }
+
+    .prize-name {
+      margin-top: 6px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* PECS Countdown Overlay Badge */
+    .countdown-badge {
+      position: absolute;
+      top: -25px;
+      right: -25px;
+      width: 80px;
+      height: 80px;
+      background-color: white;
+      border: 4px solid #333;
+      border-radius: 12px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 20;
+      padding: 4px;
+    }
+
+    .countdown-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .countdown-badge.pulse {
+      animation: pulse 0.4s ease-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+
+    canvas#confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PECS Header Bar -->
+  <div class="header-bar">
+    <div class="pecs-symbol">
+      <img src="pecs_symbols/gift.png" alt="Gift Game">
+    </div>
+    <div class="instruction-text" id="instruction">Gift Game</div>
+  </div>
+
+  <!-- Interactive Play Area -->
+  <div class="game-area" id="game-area">
+    <div class="gift-wrapper" id="gift-wrapper">
+      
+      <!-- PECS Countdown Image Badge -->
+      <div class="countdown-badge" id="countdown-badge">
+        <img id="countdown-img" src="pecs_symbols/3.png" alt="Countdown Symbol">
+      </div>
+
+      <div class="card-inner" id="card-inner">
+        <div class="card-front">
+          <img src="pecs_symbols/gift.png" alt="Gift">
+          <div class="prize-name">Gift</div>
+        </div>
+        <div class="card-back">
+          <img id="prize-img" src="" alt="Prize Visual Symbol">
+          <div class="prize-name" id="prize-name">Prize!</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+    // --- PECS Prizes Data (.png paths) ---
+    const PRIZES = [
+      { name: 'Action Figure', img: 'pecs_symbols/actionfigure.png', isBooby: false },
+      { name: 'Dress', img: 'pecs_symbols/dress.png', isBooby: false },
+      { name: 'Jigsaw', img: 'pecs_symbols/jigsaw.png', isBooby: false },
+      { name: 'Toy Car', img: 'pecs_symbols/toycar.png', isBooby: false },
+      { name: 'Dolly', img: 'pecs_symbols/dolly.png', isBooby: false },
+      { name: 'Silly Worm!', img: 'pecs_symbols/worm.png', isBooby: true },
+      { name: 'Board Game', img: 'pecs_symbols/boardgame.png', isBooby: false },
+      { name: 'Shirt', img: 'pecs_symbols/shirt.png', isBooby: false },
+      { name: 'Toy Train', img: 'pecs_symbols/toytrain.png', isBooby: false },
+      { name: 'Chocolate', img: 'pecs_symbols/chocolate.png', isBooby: false }
+    ];
+
+    let currentState = 'MOVING';
+    let posX = 0, posY = 0;
+    let speedX = 3, speedY = 3;
+    let animFrameId = null;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, duration, type = 'sine') {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playFanfare() {
+      const notes = [261.63, 329.63, 392.00, 523.25];
+      notes.forEach((note, i) => {
+        setTimeout(() => playTone(note, 0.3, 'triangle'), i * 120);
+      });
+    }
+
+    function playBoobySound() {
+      playTone(200, 0.2, 'sawtooth');
+      setTimeout(() => playTone(150, 0.4, 'sawtooth'), 200);
+    }
+
+    const gameArea = document.getElementById('game-area');
+    const giftWrapper = document.getElementById('gift-wrapper');
+    const cardInner = document.getElementById('card-inner');
+    const instruction = document.getElementById('instruction');
+    const badge = document.getElementById('countdown-badge');
+    const countdownImg = document.getElementById('countdown-img');
+    const prizeImg = document.getElementById('prize-img');
+    const prizeName = document.getElementById('prize-name');
+
+    window.onload = () => {
+      startNewGame();
+    };
+
+    function startNewGame() {
+      currentState = 'MOVING';
+      cardInner.classList.remove('flipped');
+      badge.style.display = 'none';
+      instruction.textContent = "Gift Game";
+
+      const giftSize = 180;
+      const areaWidth = gameArea.clientWidth;
+      const areaHeight = gameArea.clientHeight;
+
+      const maxX = Math.max(10, areaWidth - giftSize - 10);
+      const maxY = Math.max(10, areaHeight - giftSize - 10);
+
+      posX = Math.random() * maxX;
+      posY = Math.random() * maxY;
+
+      const baseSpeed = 3;
+      speedX = (Math.random() < 0.5 ? 1 : -1) * baseSpeed;
+      speedY = (Math.random() < 0.5 ? 1 : -1) * baseSpeed;
+
+      updateGiftPosition();
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animateMovement();
+    }
+
+    function animateMovement() {
+      if (currentState !== 'MOVING') return;
+
+      const giftSize = 180;
+      const areaWidth = gameArea.clientWidth;
+      const areaHeight = gameArea.clientHeight;
+
+      posX += speedX;
+      posY += speedY;
+
+      if (posX <= 0) {
+        posX = 0;
+        speedX = Math.abs(speedX);
+      } else if (posX >= areaWidth - giftSize) {
+        posX = areaWidth - giftSize;
+        speedX = -Math.abs(speedX);
+      }
+
+      if (posY <= 0) {
+        posY = 0;
+        speedY = Math.abs(speedY);
+      } else if (posY >= areaHeight - giftSize) {
+        posY = areaHeight - giftSize;
+        speedY = -Math.abs(speedY);
+      }
+
+      updateGiftPosition();
+      animFrameId = requestAnimationFrame(animateMovement);
+    }
+
+    function updateGiftPosition() {
+      giftWrapper.style.transform = `translate3d(${posX}px, ${posY}px, 0)`;
+    }
+
+    giftWrapper.addEventListener('click', (e) => {
+      if (currentState === 'MOVING') {
+        currentState = 'COUNTDOWN';
+        cancelAnimationFrame(animFrameId);
+        playTone(440, 0.15);
+        instruction.textContent = "Wait...";
+        startCountdown();
+      }
+    });
+
+    function startCountdown() {
+      let count = 3;
+
+      countdownImg.src = `pecs_symbols/${count}.png`;
+      badge.style.display = 'flex';
+      badge.classList.add('pulse');
+      playTone(523.25, 0.1);
+
+      const interval = setInterval(() => {
+        count--;
+        badge.classList.remove('pulse');
+        void badge.offsetWidth;
+
+        if (count > 0) {
+          countdownImg.src = `pecs_symbols/${count}.png`;
+          badge.classList.add('pulse');
+          playTone(523.25, 0.1);
+        } else {
+          clearInterval(interval);
+          badge.style.display = 'none';
+          revealPrize();
+        }
+      }, 1000);
+    }
+
+    function revealPrize() {
+      currentState = 'REVEALED';
+      
+      const selected = PRIZES[Math.floor(Math.random() * PRIZES.length)];
+      prizeName.textContent = selected.name;
+      prizeImg.src = selected.img;
+
+      cardInner.classList.add('flipped');
+
+      if (selected.isBooby) {
+        instruction.textContent = "Oh no! A silly worm!";
+        playBoobySound();
+      } else {
+        instruction.textContent = `You got a ${selected.name}!`;
+        playFanfare();
+        triggerConfetti();
+      }
+
+      setTimeout(() => {
+        startNewGame();
+      }, 4000);
+    }
+
+    function triggerConfetti() {
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#ff4757', '#2ed573', '#ffa502', '#1e90ff', '#2e86de'];
+
+      for (let i = 0; i < 60; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 0.5) * 12 - 4,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 100
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+          if (p.life > 0) {
+            active = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.2;
+            p.life--;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+          }
+        });
+
+        if (active) requestAnimationFrame(draw);
+      }
+      draw();
+    }
+  </script>
+</body>
+</html>
