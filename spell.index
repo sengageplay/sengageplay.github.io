@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PECS CVC Spelling Suite</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 1100px;
+            aspect-ratio: 3 / 2;
+            background: linear-gradient(to bottom, #e0f7fa 0%, #fff9c4 65%, #d7ccc8 65%, #8d6e63 100%);
+            border: clamp(4px, 1vw, 8px) solid #3e2723;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- HEADER & SCORE TRACKER --- */
+        .header {
+            position: absolute;
+            top: 2%;
+            right: 3%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 6px 16px;
+            border-radius: 12px;
+            border: 3px solid #333;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: clamp(14px, 2.2vw, 22px);
+            color: #333;
+        }
+
+        .score-badge {
+            background: #27ae60;
+            color: white;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: clamp(12px, 1.8vw, 18px);
+        }
+
+        /* --- MAIN PLAY AREA --- */
+        #play-area {
+            position: absolute;
+            top: 8%;
+            width: 100%;
+            height: 57%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        /* PECS SYMBOL CARD */
+        .pecs-card {
+            width: clamp(100px, 18vw, 150px);
+            aspect-ratio: 1;
+            background: white;
+            border: clamp(3px, 0.6vw, 5px) solid #2980b9;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            padding: 6px;
+        }
+
+        .pecs-card img {
+            width: 75%;
+            height: 75%;
+            object-fit: contain;
+        }
+
+        .pecs-card .label {
+            font-size: clamp(12px, 2vw, 18px);
+            font-weight: 900;
+            color: #2c3e50;
+            text-transform: lowercase;
+            margin-top: 2px;
+            letter-spacing: 1px;
+        }
+
+        /* LETTER SLOTS ZONE */
+        .slots-container {
+            display: flex;
+            gap: clamp(10px, 2vw, 20px);
+        }
+
+        .letter-slot {
+            width: clamp(60px, 11vw, 90px);
+            height: clamp(60px, 11vw, 90px);
+            background: rgba(255, 255, 255, 0.7);
+            border: 3px dashed #7f8c8d;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(32px, 6vw, 52px);
+            font-weight: 900;
+            color: #2c3e50;
+            cursor: pointer;
+            text-transform: lowercase;
+        }
+
+        .letter-slot.filled {
+            background: #ffffff;
+            border-style: solid;
+            border-color: #27ae60;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* --- COUNTER & TILES BANK --- */
+        #counter {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 35%;
+            background: #6d4c41;
+            border-top: clamp(6px, 1.2vw, 12px) solid #4e342e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(15px, 3vw, 30px);
+            padding: 10px;
+            z-index: 10;
+        }
+
+        .letter-tile {
+            width: clamp(65px, 12vw, 95px);
+            height: clamp(65px, 12vw, 95px);
+            background: #f39c12;
+            border: clamp(3px, 0.5vw, 4px) solid #d35400;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(34px, 6vw, 54px);
+            font-weight: 900;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 clamp(3px, 0.8vw, 6px) 0 #a04000;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+            touch-action: manipulation;
+            text-transform: lowercase;
+        }
+
+        .letter-tile:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #a04000;
+        }
+
+        .letter-tile.used {
+            opacity: 0.2;
+            pointer-events: none;
+            box-shadow: none;
+            transform: translateY(4px);
+        }
+
+        /* SHAKE ANIMATION */
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 25;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="header">
+        <h1>Spell the Word</h1>
+        <div class="score-badge" id="score-display">0 / 20</div>
+    </div>
+
+    <div id="play-area">
+        <!-- PECS CARD PROMPT -->
+        <div class="pecs-card">
+            <img id="target-img" src="" alt="PECS Symbol">
+            <span id="target-label" class="label">...</span>
+        </div>
+
+        <!-- SPELLING SLOTS -->
+        <div class="slots-container">
+            <div class="letter-slot" id="slot-0" onclick="clearSlot(0)"></div>
+            <div class="letter-slot" id="slot-1" onclick="clearSlot(1)"></div>
+            <div class="letter-slot" id="slot-2" onclick="clearSlot(2)"></div>
+        </div>
+    </div>
+
+    <!-- TILE BANK -->
+    <div id="counter">
+        <div class="letter-tile" id="tile-0" onclick="selectTile(0)"></div>
+        <div class="letter-tile" id="tile-1" onclick="selectTile(1)"></div>
+        <div class="letter-tile" id="tile-2" onclick="selectTile(2)"></div>
+    </div>
+</div>
+
+<script>
+    // Exact word list pointing to ./pecs_symbols/
+    const WORDS_BANK = [
+        { word: "car", img: "./pecs_symbols/car.png" },
+        { word: "toy", img: "./pecs_symbols/toy.png" },
+        { word: "bus", img: "./pecs_symbols/bus.png" },
+        { word: "box", img: "./pecs_symbols/box.png" },
+        { word: "van", img: "./pecs_symbols/van.png" },
+        { word: "cat", img: "./pecs_symbols/cat.png" },
+        { word: "dog", img: "./pecs_symbols/dog.png" },
+        { word: "pig", img: "./pecs_symbols/pig.png" },
+        { word: "cow", img: "./pecs_symbols/cow.png" },
+        { word: "cup", img: "./pecs_symbols/cup.png" },
+        { word: "jam", img: "./pecs_symbols/jam.png" },
+        { word: "pan", img: "./pecs_symbols/pan.png" },
+        { word: "pot", img: "./pecs_symbols/pot.png" },
+        { word: "bed", img: "./pecs_symbols/bed.png" },
+        { word: "hat", img: "./pecs_symbols/hat.png" },
+        { word: "sun", img: "./pecs_symbols/sun.png" },
+        { word: "bag", img: "./pecs_symbols/bag.png" },
+        { word: "pen", img: "./pecs_symbols/pen.png" },
+        { word: "map", img: "./pecs_symbols/map.png" },
+        { word: "bat", img: "./pecs_symbols/bat.png" }
+    ];
+
+    let remainingWords = [];
+    let currentTarget = null;
+    let scrambledLetters = [];
+    let placedLetters = [null, null, null];
+    let isProcessing = false;
+    let score = 0;
+
+    function playFanfare() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                const startTime = ctx.currentTime + (idx * 0.12);
+                const duration = idx === notes.length - 1 ? 0.4 : 0.15;
+                gain.gain.setValueAtTime(0.3, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            });
+        } catch (e) {
+            console.log("Audio not supported or restricted:", e);
+        }
+    }
+
+    /* --- CONFETTI --- */
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function triggerConfetti() {
+        particles = [];
+        const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+        for (let i = 0; i < 70; i++) {
+            particles.push({
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.8) * 12,
+                size: Math.random() * 8 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                vRot: (Math.random() - 0.5) * 10
+            });
+        }
+        animateConfetti();
+    }
+
+    function animateConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.25;
+            p.rotation += p.vRot;
+            if (p.y < canvas.height) active = true;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+        });
+        if (active) requestAnimationFrame(animateConfetti);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    /* --- GAME ENGINE --- */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function initGame() {
+        resizeCanvas();
+        remainingWords = [...WORDS_BANK];
+        shuffleArray(remainingWords);
+        score = 0;
+        document.getElementById('score-display').textContent = `0 / ${WORDS_BANK.length}`;
+        startNewTurn();
+    }
+
+    function startNewTurn() {
+        isProcessing = false;
+        placedLetters = [null, null, null];
+
+        for (let i = 0; i < 3; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            slot.textContent = '';
+            slot.classList.remove('filled');
+        }
+
+        if (remainingWords.length === 0) {
+            document.getElementById('target-label').textContent = "WELL DONE!";
+            document.getElementById('target-img').src = "./pecs_symbols/sun.png";
+            triggerConfetti();
+            playFanfare();
+            setTimeout(() => {
+                initGame();
+            }, 4000);
+            return;
+        }
+
+        currentTarget = remainingWords.pop();
+        
+        const imgElement = document.getElementById('target-img');
+        imgElement.src = currentTarget.img;
+        document.getElementById('target-label').textContent = currentTarget.word.toLowerCase();
+
+        // Create lower-case letter tiles
+        const letters = currentTarget.word.toLowerCase().split('');
+        let attempts = 0;
+        do {
+            scrambledLetters = [...letters];
+            shuffleArray(scrambledLetters);
+            attempts++;
+        } while (scrambledLetters.join('') === currentTarget.word.toLowerCase() && attempts < 10);
+
+        for (let i = 0; i < 3; i++) {
+            const tile = document.getElementById(`tile-${i}`);
+            tile.textContent = scrambledLetters[i];
+            tile.classList.remove('used');
+        }
+    }
+
+    function selectTile(tileIndex) {
+        if (isProcessing) return;
+
+        const emptySlotIndex = placedLetters.indexOf(null);
+        if (emptySlotIndex === -1) return;
+
+        placedLetters[emptySlotIndex] = tileIndex;
+        
+        const slot = document.getElementById(`slot-${emptySlotIndex}`);
+        slot.textContent = scrambledLetters[tileIndex];
+        slot.classList.add('filled');
+
+        document.getElementById(`tile-${tileIndex}`).classList.add('used');
+
+        if (!placedLetters.includes(null)) {
+            checkSpelling();
+        }
+    }
+
+    function clearSlot(slotIndex) {
+        if (isProcessing) return;
+
+        const tileIndex = placedLetters[slotIndex];
+        if (tileIndex === null) return;
+
+        placedLetters[slotIndex] = null;
+
+        const slot = document.getElementById(`slot-${slotIndex}`);
+        slot.textContent = '';
+        slot.classList.remove('filled');
+
+        document.getElementById(`tile-${tileIndex}`).classList.remove('used');
+    }
+
+    function checkSpelling() {
+        const spelledWord = placedLetters.map(idx => scrambledLetters[idx]).join('');
+
+        if (spelledWord === currentTarget.word.toLowerCase()) {
+            isProcessing = true;
+            score++;
+            document.getElementById('score-display').textContent = `${score} / ${WORDS_BANK.length}`;
+            triggerConfetti();
+            playFanfare();
+
+            setTimeout(() => {
+                startNewTurn();
+            }, 1800);
+        } else {
+            const container = document.querySelector('.slots-container');
+            container.classList.add('shake');
+
+            setTimeout(() => {
+                container.classList.remove('shake');
+                for (let i = 0; i < 3; i++) {
+                    clearSlot(i);
+                }
+            }, 500);
+        }
+    }
+
+    // Ensure initialization runs after DOM loads fully
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGame);
+    } else {
+        initGame();
+    }
+</script>
+
+</body>
+</html>
