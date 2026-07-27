@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PECS Shopping Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 1100px;
+            aspect-ratio: 3 / 2;
+            background: linear-gradient(to bottom, #e0f7fa 0%, #fff9c4 70%, #d7ccc8 70%, #8d6e63 100%);
+            border: clamp(4px, 1vw, 8px) solid #3e2723;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- SHOP HEADER --- */
+        .shop-header {
+            position: absolute;
+            top: 3%;
+            right: 3%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 6px 14px;
+            border-radius: 12px;
+            border: 3px solid #333;
+            z-index: 2;
+        }
+
+        .shop-header img {
+            width: clamp(30px, 4vw, 50px);
+            height: clamp(30px, 4vw, 50px);
+            object-fit: contain;
+        }
+
+        .shop-header h1 {
+            margin: 0;
+            font-size: clamp(14px, 2.2vw, 24px);
+            color: #333;
+        }
+
+        /* --- COUNTER & CHOICES --- */
+        #counter {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 32%;
+            background: #6d4c41;
+            border-top: clamp(6px, 1.2vw, 12px) solid #4e342e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4%;
+            padding: 10px;
+            z-index: 10;
+        }
+
+        .choice-card {
+            width: 24%;
+            max-width: 135px;
+            aspect-ratio: 1;
+            background: white;
+            border: clamp(3px, 0.6vw, 5px) solid #2980b9;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 clamp(3px, 0.8vw, 6px) 0 #1b4f72;
+            touch-action: manipulation;
+        }
+
+        .choice-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 clamp(5px, 1vw, 8px) 0 #1b4f72;
+        }
+
+        .choice-card:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1b4f72;
+        }
+
+        .choice-card img {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+        }
+
+        /* --- SYMBOL LABELS --- */
+        .symbol-label {
+            font-size: clamp(11px, 1.6vw, 16px);
+            font-weight: bold;
+            color: #2c3e50;
+            text-transform: capitalize;
+            margin-top: 2px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        /* --- CUSTOMER ANIMATION --- */
+        #customer-wrapper {
+            position: absolute;
+            bottom: 30%;
+            left: -35%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: left 2.5s ease-out; 
+            z-index: 5;
+            width: 32%;
+        }
+
+        #customer-wrapper.at-counter {
+            left: 34%;
+        }
+
+        #customer-wrapper.leaving {
+            left: 110%;
+            transition: left 1.8s ease-in;
+        }
+
+        #customer-img {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        /* --- SPEECH BUBBLE --- */
+        #speech-bubble {
+            background: white;
+            border: clamp(3px, 0.5vw, 4px) solid #333;
+            border-radius: 20px;
+            padding: 8px 12px;
+            position: relative;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #speech-bubble.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #speech-bubble::after, #speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            border-style: solid;
+            display: block;
+            width: 0;
+        }
+
+        #speech-bubble::after {
+            bottom: -13px;
+            border-width: 13px 10px 0;
+            border-color: white transparent;
+        }
+
+        #speech-bubble::before {
+            bottom: -18px;
+            border-width: 16px 13px 0;
+            border-color: #333 transparent;
+        }
+
+        #speech-bubble img {
+            width: clamp(40px, 7vw, 80px);
+            height: clamp(40px, 7vw, 80px);
+            object-fit: contain;
+            display: block;
+        }
+
+        /* --- SHAKE ANIMATION --- */
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        /* --- CONFETTI CANVAS --- */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 25;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="shop-header">
+        <img id="shop-icon" src="" alt="Shop Symbol">
+        <h1>Supermarket</h1>
+    </div>
+
+    <div id="customer-wrapper">
+        <div id="speech-bubble">
+            <img id="target-symbol" src="" alt="Want Symbol">
+            <span id="target-label" class="symbol-label"></span>
+        </div>
+        <img id="customer-img" src="" alt="Customer">
+    </div>
+
+    <div id="counter">
+        <div class="choice-card" onclick="makeChoice(0)">
+            <img id="choice-0" src="" alt="Option 1">
+            <span id="label-0" class="symbol-label"></span>
+        </div>
+        <div class="choice-card" onclick="makeChoice(1)">
+            <img id="choice-1" src="" alt="Option 2">
+            <span id="label-1" class="symbol-label"></span>
+        </div>
+        <div class="choice-card" onclick="makeChoice(2)">
+            <img id="choice-2" src="" alt="Option 3">
+            <span id="label-2" class="symbol-label"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ASSET_PATH = "./pecs_symbols/"; 
+
+    const CUSTOMERS = [
+        "boy.png", "girl.png", "man.png", "woman.png", "old_man.png", "old_woman.png",
+        "indian_boy.png", "indian_girl.png", "indian_man.png", "indian_woman.png", "indian_old_man.png", "indian_old_woman.png",
+        "chinese_boy.png", "chinese_girl.png", "chinese_man.png", "chinese_woman.png", "chinese_old_man.png", "chinese_old_woman.png",
+        "african_boy.png", "african_girl.png", "african_man.png", "african_woman.png", "african_old_man.png", "african_old_woman.png"
+    ];
+
+    const FOODS = [
+        "broccoli.png", "carrot.png", "potato.png", "ham.png", "cheese.png", 
+        "beef.png", "chicken.png", "cake.png", "trifle.png", "jelly.png", 
+        "bread.png", "yoghurt.png", "tomatoes.png", "cereal.png", "cucumber.png", 
+        "grapes.png", "apple.png", "orange.png", "watermelon.png", "mushroom.png", "doughnut.png"
+    ];
+
+    const SHOP_SYMBOL = "shop.png";
+
+    /* --- WEBAUDIO FANFARE GENERATOR --- */
+    function playFanfare() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioCtx();
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 notes
+            
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                
+                const startTime = ctx.currentTime + (idx * 0.12);
+                const duration = idx === notes.length - 1 ? 0.4 : 0.15;
+                
+                gain.gain.setValueAtTime(0.3, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            });
+        } catch (e) {
+            console.log("Audio Context initialized on touch.");
+        }
+    }
+
+    /* --- CONFETTI GENERATOR --- */
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function triggerConfetti() {
+        particles = [];
+        const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.8) * 12,
+                size: Math.random() * 8 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                vRot: (Math.random() - 0.5) * 10
+            });
+        }
+        animateConfetti();
+    }
+
+    let confettiAnimationId = null;
+    function animateConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.25; 
+            p.rotation += p.vRot;
+
+            if (p.y < canvas.height) active = true;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+        });
+
+        if (active) {
+            confettiAnimationId = requestAnimationFrame(animateConfetti);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    /* --- GAME LOGIC --- */
+    function formatItemName(filename) {
+        return filename.replace('.png', '').replace('_', ' ');
+    }
+
+    function createFallbackSVG(text, color) {
+        const cleanText = formatItemName(text);
+        return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="15" fill="${color}"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="white">${cleanText}</text></svg>`;
+    }
+
+    function getAssetUrl(filename) {
+        return ASSET_PATH + filename; 
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    let currentTarget = "";
+    let currentChoices = [];
+    let isProcessing = false;
+
+    const customerWrapper = document.getElementById('customer-wrapper');
+    const customerImg = document.getElementById('customer-img');
+    const speechBubble = document.getElementById('speech-bubble');
+    const targetSymbol = document.getElementById('target-symbol');
+    const targetLabel = document.getElementById('target-label');
+    const shopIcon = document.getElementById('shop-icon');
+
+    shopIcon.src = getAssetUrl(SHOP_SYMBOL);
+    shopIcon.onerror = function() { this.src = createFallbackSVG('Shop', '%23e67e22'); };
+
+    function startNewTurn() {
+        isProcessing = true;
+        
+        speechBubble.classList.remove('visible');
+        customerWrapper.classList.remove('leaving', 'at-counter');
+        
+        const randomCustomer = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
+        currentTarget = FOODS[Math.floor(Math.random() * FOODS.length)];
+
+        customerImg.src = getAssetUrl(randomCustomer);
+        customerImg.onerror = function() { this.src = createFallbackSVG(randomCustomer, '%233498db'); };
+
+        targetSymbol.src = getAssetUrl(currentTarget);
+        targetSymbol.onerror = function() { this.src = createFallbackSVG(currentTarget, '%23e74c3c'); };
+        targetLabel.textContent = formatItemName(currentTarget);
+
+        currentChoices = [currentTarget];
+        while (currentChoices.length < 3) {
+            const randomDistractor = FOODS[Math.floor(Math.random() * FOODS.length)];
+            if (!currentChoices.includes(randomDistractor)) {
+                currentChoices.push(randomDistractor);
+            }
+        }
+
+        shuffleArray(currentChoices);
+
+        for (let i = 0; i < 3; i++) {
+            const cardImg = document.getElementById(`choice-${i}`);
+            const cardLabel = document.getElementById(`label-${i}`);
+            
+            cardImg.src = getAssetUrl(currentChoices[i]);
+            cardImg.onerror = function() { this.src = createFallbackSVG(currentChoices[i], '%232ecc71'); };
+            cardLabel.textContent = formatItemName(currentChoices[i]);
+        }
+
+        // Entrance animation
+        setTimeout(() => {
+            customerWrapper.classList.add('at-counter');
+        }, 100);
+
+        // Speech bubble visibility delay
+        setTimeout(() => {
+            speechBubble.classList.add('visible');
+            isProcessing = false;
+        }, 2600);
+    }
+
+    function makeChoice(index) {
+        if (isProcessing) return;
+
+        const selectedFood = currentChoices[index];
+        const selectedCard = document.querySelectorAll('.choice-card')[index];
+
+        if (selectedFood === currentTarget) {
+            isProcessing = true;
+            
+            triggerConfetti();
+            playFanfare();
+
+            setTimeout(() => {
+                speechBubble.classList.remove('visible');
+                customerWrapper.classList.add('leaving');
+            }, 1200);
+
+            setTimeout(() => {
+                startNewTurn();
+            }, 3200);
+
+        } else {
+            selectedCard.classList.add('shake');
+            setTimeout(() => {
+                selectedCard.classList.remove('shake');
+            }, 400);
+        }
+    }
+
+    window.onload = startNewTurn;
+</script>
+
+</body>
+</html>
