@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cause & Effect: Circle Tunnel Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Gentle "Touch" Prompt Overlay */
+        #touch-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; /* Allows clicks to pass right through to canvas */
+            opacity: 1;
+            transition: opacity 0.8s ease;
+        }
+
+        #touch-prompt.hidden {
+            opacity: 0;
+        }
+
+        /* Pulsing PECS Prompt Icon */
+        .pecs-prompt-icon {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+            animation: pulse 1.8s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<!-- Reusable Touch Prompt using your PECS symbol -->
+<div id="touch-prompt">
+    <img src="touch.png" alt="Touch PECS Prompt" class="pecs-prompt-icon">
+</div>
+
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const promptElem = document.getElementById('touch-prompt');
+
+    let audioCtx = null;
+    let idleTimer = null;
+    let activeTunnels = [];
+    let isDragging = false;
+    let lastDragPos = { x: 0, y: 0 };
+
+    // Softer, sensory-friendly palette
+    const PALETTE = [
+        '#77DDFF', // Soft Sky Blue
+        '#FF99C8', // Gentle Rose
+        '#FCF6BD', // Pastel Yellow
+        '#B9FBC0', // Mint Green
+        '#E0C3FC', // Soft Lavender
+        '#FFD6A5'  // Warm Peach
+    ];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    /* --- AUDIO SYNTHESIS (Softer, slower, chime-like tones) --- */
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSoftChime() {
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        
+        // Gentle pentatonic chime frequencies
+        const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C4 to C5
+        const startFreq = notes[Math.floor(Math.random() * notes.length)];
+
+        osc.type = 'sine'; // Softest waveform
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(startFreq * 1.5, now + 0.9);
+
+        // Soft fade in and slow fade out (0.9s duration)
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+        osc.start(now);
+        osc.stop(now + 0.9);
+    }
+
+    /* --- CIRCLE TUNNEL CREATION --- */
+    function createCircleTunnel(x, y) {
+        initAudio();
+        
+        // Play chime periodically (throttled during fast dragging so audio stays gentle)
+        if (Math.random() < 0.6) {
+            playSoftChime();
+        }
+
+        // Reset and hide prompt
+        promptElem.classList.add('hidden');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            promptElem.classList.remove('hidden');
+        }, 5000); // Reappear after 5 seconds of no touches
+
+        const baseColor = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+
+        // Randomize scale factor so some tunnels are small/compact and others are larger
+        const scaleFactor = Math.random() * 0.8 + 0.6; // Scale multiplier between 0.6 and 1.4
+
+        // 5 Concentric Rings
+        const baseSpacing = 22 * scaleFactor;
+        const initialRadius = 10 * scaleFactor;
+
+        activeTunnels.push({
+            x: x,
+            y: y,
+            color: baseColor,
+            rings: [
+                { r: initialRadius, speed: 2.0 * scaleFactor },
+                { r: initialRadius + baseSpacing, speed: 2.0 * scaleFactor },
+                { r: initialRadius + (baseSpacing * 2), speed: 2.0 * scaleFactor },
+                { r: initialRadius + (baseSpacing * 3), speed: 2.0 * scaleFactor },
+                { r: initialRadius + (baseSpacing * 4), speed: 2.0 * scaleFactor }
+            ],
+            life: 1.0
+        });
+    }
+
+    /* --- MAIN ANIMATION LOOP --- */
+    function animate() {
+        // Pure black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Render circle tunnels
+        for (let t = activeTunnels.length - 1; t >= 0; t--) {
+            const tunnel = activeTunnels[t];
+            tunnel.life -= 0.008; // Slower fade duration
+
+            tunnel.rings.forEach(ring => {
+                ring.r += ring.speed; // Slower expansion speed
+                
+                // Ring thickness scales down gracefully as it expands
+                const thickness = Math.max(2, 8 - (ring.r * 0.02));
+                
+                ctx.globalAlpha = Math.max(0, tunnel.life);
+                
+                // Draw Circle
+                ctx.beginPath();
+                ctx.arc(tunnel.x, tunnel.y, ring.r, 0, Math.PI * 2);
+                ctx.strokeStyle = tunnel.color;
+                ctx.lineWidth = thickness;
+                ctx.stroke();
+            });
+
+            ctx.globalAlpha = 1.0;
+
+            // Remove tunnel when invisible or grown too large
+            if (tunnel.life <= 0 || tunnel.rings[0].r > 320) {
+                activeTunnels.splice(t, 1);
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    /* --- DRAG & TOUCH CONTROLS --- */
+    function handlePointerStart(x, y) {
+        isDragging = true;
+        lastDragPos = { x, y };
+        createCircleTunnel(x, y);
+    }
+
+    function handlePointerMove(x, y) {
+        if (!isDragging) return;
+        
+        // Calculate distance moved to avoid spawning too densely
+        const dist = Math.hypot(x - lastDragPos.x, y - lastDragPos.y);
+        if (dist > 35) { // Spawn new circles every 35 pixels dragged
+            createCircleTunnel(x, y);
+            lastDragPos = { x, y };
+        }
+    }
+
+    function handlePointerEnd() {
+        isDragging = false;
+    }
+
+    // Pointer Event Listeners (Handles Mouse & Touch seamlessly)
+    canvas.addEventListener('pointerdown', (e) => {
+        handlePointerStart(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+        handlePointerMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointerup', handlePointerEnd);
+    window.addEventListener('pointercancel', handlePointerEnd);
+
+    // Keyboard support for single switch access
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+            createCircleTunnel(canvas.width / 2, canvas.height / 2);
+        }
+    });
+
+    animate();
+</script>
+
+</body>
+</html>
