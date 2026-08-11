@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TapTapSEN - Games for SEND Children</title>
+    <title>DoneNowPlay — Simple Visual Learning Games</title>
     <style>
         body {
             margin: 0;
@@ -17,16 +17,23 @@
             padding: 25px 20px;
             background-color: #1a1a1e;
             border-bottom: 4px solid #4ade80; /* Friendly green accent anchor */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 2.6rem;
-            color: #ffffff;
+        /* LOGO STYLING */
+        .site-logo {
+            max-width: 380px; /* Limits size on desktop */
+            width: 100%;       /* Allows logo to shrink nicely on mobile */
+            height: auto;
+            margin-bottom: 10px;
+            display: block;
         }
 
         header p {
-            margin: 8px 0 0;
+            margin: 4px 0 0;
             color: #a1a1aa;
             font-size: 1.3rem;
             font-weight: 500;
@@ -35,10 +42,9 @@
         /* Fixed 4-column Grid Layout */
         .arcade-grid {
             display: grid;
-            /* Force exactly 4 columns on larger screens, scaling down to 2 or 1 on small phones */
             grid-template-columns: repeat(4, 1fr);
-            gap: 25px; /* Slightly wider gap for larger tiles */
-            max-width: 1000px; /* Snugs the grid neatly in the middle of the screen */
+            gap: 25px;
+            max-width: 1000px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -46,37 +52,38 @@
         /* Responsive tweak for smaller screens (tablets/phones) */
         @media (max-width: 768px) {
             .arcade-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2-column grid on mobile */
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .site-logo {
+                max-width: 280px; /* Compact logo size for mobile screens */
             }
         }
 
         .game-card {
-            background-color: #ffffff; /* Clean white card background to match PECS style */
-            border-radius: 20px; /* Slightly rounder edges for larger tiles */
+            background-color: #ffffff;
+            border-radius: 20px;
             overflow: hidden;
             text-decoration: none;
-            border: 5px solid #27272a; /* Thicker border for a chunky, satisfying feel */
+            border: 5px solid #27272a;
             transition: transform 0.15s ease-in-out, border-color 0.15s ease-in-out;
             box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-            
-            aspect-ratio: 1 / 1; /* Forces the card to stay a perfect square */
+            aspect-ratio: 1 / 1;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* High-contrast border feedback when highlighted or hovered */
         .game-card:hover, .game-card:focus {
             transform: scale(1.05);
-            border-color: #4ade80; /* Turns bright green */
+            border-color: #4ade80;
             outline: none;
         }
 
         .game-card img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Ensures the whole customized card fits perfectly inside */
-            padding: 15px; /* Breathing room for the custom text/image */
+            object-fit: contain;
+            padding: 15px;
             box-sizing: border-box;
             background-color: #ffffff;
         }
@@ -91,8 +98,9 @@
 <body>
 
     <header>
-        <h1>TapTapSEN</h1>
-        <p>Sensory & Learning Games for SEND Children</p>
+        <!-- SITE LOGO PLACEHOLDER -->
+        <img src="images/logo.png" alt="DoneNowPlay Logo" class="site-logo">
+        <p>Simple symbol games for visual minds.</p>
     </header>
 
     <div class="arcade-grid">
@@ -154,13 +162,13 @@
         
         <!-- GAME CARD 21: Animal Feed -->
         <a href="animalfeed/" class="game-card">
-        <img src="images/animalfeedtitlecard.png" alt="Feed the Animals game">
+            <img src="images/animalfeedtitlecard.png" alt="Feed the Animals game">
         </a>
 
     </div>
 
     <footer>
-        <p>© TapTapSEN — Simple, accessible learning for sensory minds.</p>
+        <p>© DoneNowPlay — Simple, calm symbol games for visual learners.</p>
     </footer>
 
 </body>
