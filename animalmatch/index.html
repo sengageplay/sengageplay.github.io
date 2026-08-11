@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safari Visual Match 🦁</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e0f2f1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      color: #004d40;
+      font-size: 2rem;
+    }
+
+    p {
+      margin: 5px 0 0 0;
+      color: #00695c;
+      font-size: 1.1rem;
+    }
+
+    /* 10-Card Max Grid Layout (2 rows of 5) */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 10px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 4px solid #b2dfdb;
+      border-radius: 16px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+      transition: transform 0.15s ease, border-color 0.2s ease, background-color 0.2s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: scale(1.03);
+    }
+
+    /* Selected Card State (Orange highlight) */
+    .card.selected {
+      border-color: #ff9800;
+      background-color: #fff8e1;
+      box-shadow: 0 0 16px rgba(255, 152, 0, 0.5);
+    }
+
+    /* Matched Animated Card State (Green highlight) */
+    .card.matched {
+      border-color: #4caf50;
+      background-color: #e8f5e9;
+      box-shadow: 0 0 16px rgba(76, 175, 80, 0.4);
+      cursor: default;
+    }
+
+    .card img, .card video {
+      width: 85%;
+      height: 85%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* Hide video until matched and active */
+    .card video {
+      display: none;
+    }
+
+    /* Swap static image for video animation upon matching */
+    .card.matched.has-video img {
+      display: none;
+    }
+
+    .card.matched.has-video video {
+      display: block;
+    }
+
+    /* Celebration Banner */
+    .celebration {
+      display: none;
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: #ffffff;
+      border: 3px solid #4caf50;
+      border-radius: 12px;
+      color: #2e7d32;
+      font-size: 1.3rem;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    }
+
+    /* Bottom Reset Button */
+    .controls {
+      margin-top: 25px;
+    }
+
+    .reset-btn {
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background: #00796b;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 121, 107, 0.3);
+    }
+
+    .reset-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Responsive layout for tablet screens */
+    @media (max-width: 768px) {
+      .game-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Safari Animal Match 🦁</h1>
+    <p>Tap two matching animals to bring them to life!</p>
+  </header>
+
+  <div class="game-grid" id="gameGrid"></div>
+
+  <div class="celebration" id="celebrationBanner">🌟 Well Done! All Matched! 🌟</div>
+
+  <div class="controls">
+    <button class="reset-btn" id="resetBtn">🔄 Play Again</button>
+  </div>
+
+  <script>
+    // 5 Safari Animals (10 cards total)
+    const SAFARI_ANIMALS = [
+      { id: 'lion', name: 'Lion' },
+      { id: 'tiger', name: 'Tiger' },
+      { id: 'panda', name: 'Panda' },
+      { id: 'giraffe', name: 'Giraffe' },
+      { id: 'monkey', name: 'Monkey' }
+    ];
+
+    let firstCard = null;
+    let lockBoard = false;
+    let matchesCount = 0;
+
+    const gameGrid = document.getElementById('gameGrid');
+    const resetBtn = document.getElementById('resetBtn');
+    const celebrationBanner = document.getElementById('celebrationBanner');
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function initGame() {
+      gameGrid.innerHTML = '';
+      celebrationBanner.style.display = 'none';
+      firstCard = null;
+      lockBoard = false;
+      matchesCount = 0;
+
+      // Duplicate array to make 5 pairs (10 cards total)
+      const deck = [...SAFARI_ANIMALS, ...SAFARI_ANIMALS];
+      const shuffledDeck = shuffle(deck);
+
+      shuffledDeck.forEach((animal, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.id = animal.id;
+
+        // Static Image
+        const img = document.createElement('img');
+        img.src = `${animal.id}.png`;
+        img.alt = animal.name;
+
+        // Animated Video Player (NO loop attribute here)
+        const video = document.createElement('video');
+        video.src = `${animal.id}.mp4`;
+        video.muted = true;
+        video.playsInline = true;
+
+        // Verify video exists before playing
+        let videoLoaded = false;
+        video.onloadeddata = () => {
+          videoLoaded = true;
+        };
+
+        // Track loops (3 max)
+        let loopCount = 0;
+
+        video.addEventListener('ended', () => {
+          loopCount++;
+          if (loopCount < 3) {
+            video.currentTime = 0;
+            video.play().catch(e => console.log('Loop play error:', e));
+          } else {
+            // After 3 loops: pause, reset loop count, and revert back to PNG
+            video.pause();
+            loopCount = 0;
+            card.classList.remove('has-video');
+          }
+        });
+
+        card.appendChild(img);
+        card.appendChild(video);
+
+        card.addEventListener('click', () => handleCardTap(card, videoLoaded));
+        gameGrid.appendChild(card);
+      });
+    }
+
+    function handleCardTap(card, videoLoaded) {
+      if (lockBoard) return;
+      if (card.classList.contains('matched')) return;
+      if (card === firstCard) return;
+
+      card.classList.add('selected');
+
+      if (!firstCard) {
+        firstCard = card;
+      } else {
+        lockBoard = true;
+        const isMatch = firstCard.dataset.id === card.dataset.id;
+
+        if (isMatch) {
+          setTimeout(() => {
+            firstCard.classList.remove('selected');
+            card.classList.remove('selected');
+
+            firstCard.classList.add('matched');
+            card.classList.add('matched');
+
+            // Play both videos for 3 loops if available
+            [firstCard, card].forEach(c => {
+              const v = c.querySelector('video');
+              if (v) {
+                c.classList.add('has-video');
+                v.currentTime = 0;
+                v.play().catch(e => {
+                  console.log('Autoplay error:', e);
+                  c.classList.remove('has-video'); // Fallback to PNG if video fails
+                });
+              }
+            });
+
+            matchesCount++;
+            if (matchesCount === SAFARI_ANIMALS.length) {
+              celebrationBanner.style.display = 'block';
+            }
+
+            resetSelection();
+          }, 300);
+        } else {
+          // Quietly clear highlight if not matched
+          setTimeout(() => {
+            firstCard.classList.remove('selected');
+            card.classList.remove('selected');
+            resetSelection();
+          }, 600);
+        }
+      }
+    }
+
+    function resetSelection() {
+      firstCard = null;
+      lockBoard = false;
+    }
+
+    resetBtn.addEventListener('click', initGame);
+    window.addEventListener('load', initGame);
+  </script>
+</body>
+</html>
