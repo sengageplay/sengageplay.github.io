@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Weather Balloons</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            /* Rich Sky Gradient: Deep atmospheric blue at top down to a soft horizon glow */
+            background: linear-gradient(to bottom, #1e5799 0%, #207cca 35%, #7db9e8 75%, #e0f2fe 100%);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #instruction-banner {
+            position: absolute;
+            top: 12px;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(5px);
+            padding: 12px 28px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1a365d;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+            text-align: center;
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+<div id="instruction-banner">
+    🎈 Weather Balloons 🎈
+</div>
+
+<canvas id="game-canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let audioCtx = null;
+    let balloons = [];
+    let particles = [];
+    let fallingRewards = [];
+
+    const balloonColors = [
+        { fill: 'rgba(255, 77, 77, 0.85)', highlight: 'rgba(255, 255, 255, 0.8)' },
+        { fill: 'rgba(58, 134, 255, 0.85)', highlight: 'rgba(255, 255, 255, 0.8)' },
+        { fill: 'rgba(255, 210, 63, 0.85)', highlight: 'rgba(255, 255, 255, 0.8)' },
+        { fill: 'rgba(56, 176, 0, 0.85)', highlight: 'rgba(255, 255, 255, 0.8)' },
+        { fill: 'rgba(155, 89, 182, 0.85)', highlight: 'rgba(255, 255, 255, 0.8)' }
+    ];
+
+    // Corrected array to use 'snowflake' matching snowflake.png
+    const weatherTypes = ['sunshine', 'rainbow', 'cloud', 'snowflake', 'tornado', 'rain', 'wind', 'lightning'];
+    const loadedImages = {};
+
+    weatherTypes.forEach(type => {
+        const img = new Image();
+        img.src = `${type}.png`;
+        loadedImages[type] = img;
+    });
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    /* --- AUDIO SYNTHESIS --- */
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playPopSound(type) {
+        if (!audioCtx) return;
+
+        const bufferSize = audioCtx.sampleRate * 0.05;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = audioCtx.createBufferSource();
+        whiteNoise.buffer = buffer;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        if (type === 'lightning') {
+            filter.frequency.setValueAtTime(1800, audioCtx.currentTime);
+        } else if (type === 'tornado') {
+            filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+        } else {
+            filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+        }
+        filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+        whiteNoise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        whiteNoise.start();
+    }
+
+    /* --- BALLOON CLASS --- */
+    class Balloon {
+        constructor() {
+            this.radiusX = 45 + Math.random() * 15;
+            this.radiusY = this.radiusX * 1.2;
+            this.x = Math.random() * (canvas.width - this.radiusX * 2) + this.radiusX;
+            this.y = canvas.height + this.radiusY + 20;
+            this.speed = 1.2 + Math.random() * 1.5;
+            this.wobbleSpeed = 0.02 + Math.random() * 0.03;
+            this.angle = Math.random() * Math.PI * 2;
+            this.color = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+            this.payload = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+        }
+
+        update() {
+            this.y -= this.speed;
+            this.angle += this.wobbleSpeed;
+            this.x += Math.sin(this.angle) * 0.8;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+
+            // String
+            ctx.beginPath();
+            ctx.moveTo(0, this.radiusY);
+            ctx.quadraticCurveTo(Math.sin(this.angle) * 10, this.radiusY + 30, 0, this.radiusY + 55);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Balloon Body
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.radiusX, this.radiusY, 0, 0, Math.PI * 2);
+            ctx.fillStyle = this.color.fill;
+            ctx.fill();
+
+            // Knot
+            ctx.beginPath();
+            ctx.moveTo(-7, this.radiusY);
+            ctx.lineTo(7, this.radiusY);
+            ctx.lineTo(9, this.radiusY + 9);
+            ctx.lineTo(-9, this.radiusY + 9);
+            ctx.closePath();
+            ctx.fillStyle = this.color.fill;
+            ctx.fill();
+
+            // Highlight
+            ctx.beginPath();
+            ctx.ellipse(-this.radiusX * 0.35, -this.radiusY * 0.35, this.radiusX * 0.2, this.radiusY * 0.3, -Math.PI / 4, 0, Math.PI * 2);
+            ctx.fillStyle = this.color.highlight;
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        contains(px, py) {
+            const dx = px - this.x;
+            const dy = py - this.y;
+            return ((dx * dx) / (this.radiusX * this.radiusX) + (dy * dy) / (this.radiusY * this.radiusY)) <= 1;
+        }
+    }
+
+    /* --- FALLING REWARD CLASS --- */
+    class FallingReward {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.size = 300; // Giant 300px icons
+            this.vy = -3;    
+            this.gravity = 0.15; 
+            this.rotation = 0;
+            this.vr = type === 'tornado' ? 0.2 : (type === 'lightning' ? 0.08 : (Math.random() - 0.5) * 0.04);
+        }
+
+        update() {
+            this.vy += this.gravity;
+            this.y += this.vy;
+            this.rotation += this.vr;
+        }
+
+        draw() {
+            const img = loadedImages[this.type];
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+
+            if (img && img.complete && img.naturalWidth !== 0) {
+                ctx.drawImage(img, -this.size / 2, -this.size / 2, this.size, this.size);
+            } else {
+                // Fallback Emoji if file isn't found
+                const ems = { sunshine:'☀️', rainbow:'🌈', cloud:'☁️', snowflake:'❄️', tornado:'🌪️', rain:'🌧️', wind:'💨', lightning:'⚡' };
+                ctx.font = '180px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(ems[this.type] || '🌤️', 0, 0);
+            }
+
+            ctx.restore();
+        }
+    }
+
+    /* --- POP PARTICLES --- */
+    function createPopParticles(x, y, color, type) {
+        const count = (type === 'rain' || type === 'tornado') ? 45 : 35;
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = type === 'tornado' ? Math.random() * 14 + 5 : Math.random() * 10 + 3;
+            
+            let particleColor = color;
+            if (type === 'lightning') particleColor = '#FFFF00';
+            if (type === 'tornado') particleColor = '#A9A9A9';
+
+            particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed + (type === 'rain' ? 2 : 0),
+                radius: type === 'lightning' ? Math.random() * 6 + 2 : Math.random() * 8 + 4,
+                color: particleColor,
+                alpha: 1,
+                decay: Math.random() * 0.025 + 0.015
+            });
+        }
+    }
+
+    /* --- GAME CONTROLS --- */
+    let spawnTimer = 0;
+    function manageBalloons() {
+        spawnTimer++;
+        if (spawnTimer % 45 === 0 && balloons.length < 10) {
+            balloons.push(new Balloon());
+        }
+
+        for (let i = balloons.length - 1; i >= 0; i--) {
+            const b = balloons[i];
+            b.update();
+            b.draw();
+
+            if (b.y < -b.radiusY - 60) {
+                balloons.splice(i, 1);
+            }
+        }
+    }
+
+    function manageRewards() {
+        for (let i = fallingRewards.length - 1; i >= 0; i--) {
+            const r = fallingRewards[i];
+            r.update();
+            r.draw();
+
+            if (r.y > canvas.height + r.size) {
+                fallingRewards.splice(i, 1);
+            }
+        }
+    }
+
+    function renderParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= p.decay;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            if (p.alpha <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+    }
+
+    /* --- INPUT HANDLING --- */
+    function handlePointerDown(e) {
+        initAudio();
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        for (let i = balloons.length - 1; i >= 0; i--) {
+            if (balloons[i].contains(clickX, clickY)) {
+                const b = balloons[i];
+                playPopSound(b.payload);
+                createPopParticles(b.x, b.y, b.color.fill, b.payload);
+                
+                fallingRewards.push(new FallingReward(b.x, b.y, b.payload));
+                balloons.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+
+    /* --- MAIN LOOP --- */
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        manageBalloons();
+        manageRewards();
+        renderParticles();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+</body>
+</html>
