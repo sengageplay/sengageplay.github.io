@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stamp & Animate PECS - Transport</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e0f7fa;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      color: #00796b;
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin: 4px 0 0 0;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .game-area {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      height: calc(100vh - 90px);
+      width: 98%;
+      max-width: 1300px;
+      padding-bottom: 10px;
+    }
+
+    /* Sidebar Structure - Sized for large stamp previews */
+    .sidebar {
+      width: 230px;
+      height: 100%;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 2 Columns x 4 Rows Grid Layout */
+    .stamp-list {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 10px;
+      justify-items: center;
+      align-items: center;
+    }
+
+    /* Large sidebar tiles */
+    .stamp-option {
+      width: 96px;
+      height: 96px;
+      border: 3px solid #e0e0e0;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #fafafa;
+      transition: transform 0.1s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stamp-option:hover {
+      transform: scale(1.04);
+    }
+
+    .stamp-option.active {
+      border: 3px solid #ff9800;
+      background: #fff8e1;
+      box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+    }
+
+    /* Large image sizing inside sidebar tiles */
+    .stamp-option img {
+      max-width: 85px;
+      max-height: 85px;
+      object-fit: contain;
+    }
+
+    /* Clear Canvas Button */
+    .clear-btn {
+      width: 100%;
+      padding: 14px 0;
+      margin-top: auto;
+      background: #ff5252;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(255, 82, 82, 0.3);
+      flex-shrink: 0;
+    }
+
+    .clear-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Canvas Area */
+    .canvas-container {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    #videoCache {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Stamp & Animate 🚗</h1>
+    <p>Pick a vehicle, tap to stamp, and watch it animate then disappear!</p>
+  </header>
+
+  <div class="game-area">
+    <div class="sidebar">
+      <!-- 2x4 Grid Stamp Area -->
+      <div class="stamp-list" id="stampList"></div>
+
+      <!-- Clear Canvas Button -->
+      <button class="clear-btn" id="clearBtn">🗑️ Clear</button>
+    </div>
+
+    <div class="canvas-container" id="canvasContainer">
+      <canvas id="paintCanvas"></canvas>
+    </div>
+  </div>
+
+  <div id="videoCache"></div>
+
+  <script>
+    const TRANSPORT = [
+      { id: 'car' },
+      { id: 'tram' },
+      { id: 'van' },
+      { id: 'helicopter' },
+      { id: 'ship' },
+      { id: 'submarine' },
+      { id: 'toy_train' },
+      { id: 'plane' }
+    ];
+
+    let currentSymbol = TRANSPORT[0];
+    const loadedImages = {};
+
+    // Preload static vehicle images
+    TRANSPORT.forEach(item => {
+      const img = new Image();
+      img.src = `${item.id}.png`;
+      loadedImages[item.id] = img;
+    });
+
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+    const stampList = document.getElementById('stampList');
+    const clearBtn = document.getElementById('clearBtn');
+    const videoCache = document.getElementById('videoCache');
+
+    const STAMP_SIZE = 220; // 220x220px stamps on canvas
+    let stamps = [];
+    let renderLoopActive = false;
+
+    function renderSidebar() {
+      stampList.innerHTML = '';
+
+      TRANSPORT.forEach((item) => {
+        const option = document.createElement('div');
+        option.className = `stamp-option ${item.id === currentSymbol.id ? 'active' : ''}`;
+
+        const img = document.createElement('img');
+        img.src = `${item.id}.png`;
+
+        option.appendChild(img);
+
+        option.addEventListener('click', () => {
+          document.querySelectorAll('.stamp-option').forEach(el => el.classList.remove('active'));
+          option.classList.add('active');
+          currentSymbol = item;
+        });
+
+        stampList.appendChild(option);
+      });
+    }
+
+    clearBtn.addEventListener('click', clearCanvas);
+
+    function resizeCanvas() {
+      canvas.width = container.clientWidth - 20;
+      canvas.height = container.clientHeight - 20;
+      redrawCanvas();
+    }
+
+    function redrawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      stamps.forEach(stamp => {
+        const drawX = stamp.x - stamp.size / 2;
+        const drawY = stamp.y - stamp.size / 2;
+
+        if (stamp.isAnimated && stamp.videoElement && !stamp.videoElement.ended) {
+          ctx.drawImage(stamp.videoElement, drawX, drawY, stamp.size, stamp.size);
+        } else {
+          const staticImg = loadedImages[stamp.symbolId];
+          if (staticImg && staticImg.complete) {
+            ctx.drawImage(staticImg, drawX, drawY, stamp.size, stamp.size);
+          }
+        }
+      });
+    }
+
+    function renderLoop() {
+      redrawCanvas();
+      requestAnimationFrame(renderLoop);
+    }
+
+    function placeStamp(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      const video = document.createElement('video');
+      video.src = `${currentSymbol.id}.mp4`;
+      video.muted = true;
+      video.setAttribute('muted', '');
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      videoCache.appendChild(video);
+
+      const newStamp = {
+        symbolId: currentSymbol.id,
+        x: x,
+        y: y,
+        size: STAMP_SIZE,
+        isAnimated: false,
+        videoElement: video
+      };
+
+      // Track loops (3 times total)
+      let playCount = 0;
+      video.addEventListener('ended', () => {
+        playCount++;
+        if (playCount < 3) {
+          video.currentTime = 0;
+          video.play();
+        } else {
+          // Vanish after 3rd loop completes!
+          video.pause();
+          video.remove();
+          stamps = stamps.filter(s => s !== newStamp);
+          redrawCanvas();
+        }
+      });
+
+      stamps.push(newStamp);
+      redrawCanvas();
+
+      setTimeout(() => {
+        newStamp.isAnimated = true;
+        newStamp.videoElement.currentTime = 0;
+        
+        const playPromise = newStamp.videoElement.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            if (!renderLoopActive) {
+              renderLoopActive = true;
+              renderLoop();
+            }
+          }).catch(err => {
+            console.log(`Video playback failed for ${currentSymbol.id}:`, err);
+          });
+        }
+      }, 3000);
+    }
+
+    function clearCanvas() {
+      stamps.forEach(stamp => {
+        if (stamp.videoElement) {
+          stamp.videoElement.pause();
+          stamp.videoElement.remove();
+        }
+      });
+      stamps = [];
+      redrawCanvas();
+    }
+
+    canvas.addEventListener('click', placeStamp);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      placeStamp(e);
+    }, { passive: false });
+
+    renderSidebar();
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+</body>
+</html>
