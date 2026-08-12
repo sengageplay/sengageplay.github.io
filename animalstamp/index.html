@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stamp & Animate PECS Animal Set</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e0f7fa;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      color: #00796b;
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin: 4px 0 0 0;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .game-area {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      height: calc(100vh - 100px);
+      width: 98%;
+      max-width: 1400px;
+      padding-bottom: 10px;
+    }
+
+    /* 2-Column Sidebar to fit 150x150px icons */
+    .sidebar {
+      width: 350px;
+      height: 100%;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: max-content;
+      gap: 12px;
+      justify-items: center;
+      align-content: start;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+
+    /* Custom scrollbar for sidebar */
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+      background-color: #b2dfdb;
+      border-radius: 10px;
+    }
+
+    /* 150px x 150px Sidebar Icons */
+    .stamp-option {
+      width: 150px;
+      height: 150px;
+      border: 4px solid #e0e0e0;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #fafafa;
+      transition: transform 0.1s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .stamp-option:hover {
+      transform: scale(1.03);
+    }
+
+    /* Active selected animal highlight */
+    .stamp-option.active {
+      border: 5px solid #ff9800;
+      background: #fff8e1;
+      box-shadow: 0 4px 14px rgba(255, 152, 0, 0.4);
+    }
+
+    .stamp-option img {
+      max-width: 125px;
+      max-height: 125px;
+      object-fit: contain;
+    }
+
+    /* Clear Canvas Button spanning both columns */
+    .clear-btn {
+      grid-column: span 2;
+      margin-top: 8px;
+      width: 100%;
+      padding: 12px 0;
+      background: #ff5252;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(255, 82, 82, 0.3);
+      flex-shrink: 0;
+    }
+
+    .clear-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Canvas Area */
+    .canvas-container {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      cursor: crosshair;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Stamp & Animate 🎨</h1>
+    <p>Select an animal from the left, tap the canvas to stamp, and wait 3 seconds to watch them animate!</p>
+  </header>
+
+  <div class="game-area">
+    <div class="sidebar" id="sidebar">
+      </div>
+
+    <div class="canvas-container" id="canvasContainer">
+      <canvas id="paintCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // List of available PECS animals
+    const ANIMALS = [
+      { id: 'frog', name: 'Frog' },
+      { id: 'dog', name: 'Dog' },
+      { id: 'cat', name: 'Cat' },
+      { id: 'squirrel', name: 'Squirrel' },
+      { id: 'horse', name: 'Horse' },
+      { id: 'bunny', name: 'Bunny' },
+      { id: 'mouse', name: 'Mouse' },
+      { id: 'fish', name: 'Fish' }
+    ];
+
+    let currentAnimal = ANIMALS[0]; // Default selected animal
+    const loadedImages = {}; // Cache static images in memory
+
+    // Preload static images
+    ANIMALS.forEach(animal => {
+      const img = new Image();
+      img.src = `${animal.id}.png`;
+      loadedImages[animal.id] = img;
+    });
+
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+    const sidebar = document.getElementById('sidebar');
+
+    const STAMP_SIZE = 200; // Stamp size on canvas (200px x 200px)
+    let stamps = []; // Array storing all stamps placed on screen
+    let renderLoopActive = false;
+
+    // Build Sidebar UI dynamically
+    function initSidebar() {
+      sidebar.innerHTML = '';
+
+      ANIMALS.forEach((animal, index) => {
+        const option = document.createElement('div');
+        option.className = `stamp-option ${index === 0 ? 'active' : ''}`;
+        option.dataset.id = animal.id;
+
+        const img = document.createElement('img');
+        img.src = `${animal.id}.png`;
+        img.alt = animal.name;
+
+        option.appendChild(img);
+
+        option.addEventListener('click', () => {
+          document.querySelectorAll('.stamp-option').forEach(el => el.classList.remove('active'));
+          option.classList.add('active');
+          currentAnimal = animal;
+        });
+
+        sidebar.appendChild(option);
+      });
+
+      // Add Clear Canvas button
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'clear-btn';
+      clearBtn.innerText = '🗑️ Clear';
+      clearBtn.addEventListener('click', clearCanvas);
+      sidebar.appendChild(clearBtn);
+    }
+
+    function resizeCanvas() {
+      canvas.width = container.clientWidth - 20;
+      canvas.height = container.clientHeight - 20;
+      redrawCanvas();
+    }
+
+    // Redraw static stamps and active video frames
+    function redrawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      stamps.forEach(stamp => {
+        const drawX = stamp.x - stamp.size / 2;
+        const drawY = stamp.y - stamp.size / 2;
+
+        if (stamp.isAnimated && stamp.videoElement && !stamp.videoElement.paused) {
+          // Draw video frame
+          ctx.drawImage(stamp.videoElement, drawX, drawY, stamp.size, stamp.size);
+        } else {
+          // Draw static image matching the animal ID
+          const staticImg = loadedImages[stamp.animalId];
+          if (staticImg && staticImg.complete) {
+            ctx.drawImage(staticImg, drawX, drawY, stamp.size, stamp.size);
+          }
+        }
+      });
+    }
+
+    // Smooth animation loop that runs continuously once animations start
+    function renderLoop() {
+      redrawCanvas();
+      requestAnimationFrame(renderLoop);
+    }
+
+    // Remove a stamp from the array and clean up its resources
+    function removeStamp(stampToRemove) {
+      if (stampToRemove.videoElement) {
+        stampToRemove.videoElement.pause();
+        stampToRemove.videoElement.remove();
+      }
+      stamps = stamps.filter(s => s !== stampToRemove);
+      redrawCanvas();
+    }
+
+    // Handle Stamp Placement
+    function placeStamp(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      // Create a dedicated video player for this specific stamp placement
+      const video = document.createElement('video');
+      video.src = `${currentAnimal.id}.mp4`;
+      video.muted = true;
+      video.playsInline = true;
+
+      // Create stamp object
+      const newStamp = {
+        animalId: currentAnimal.id,
+        x: x,
+        y: y,
+        size: STAMP_SIZE,
+        isAnimated: false,
+        videoElement: video,
+        loopCount: 0
+      };
+
+      // Handle looping 3 times then disappearing
+      video.addEventListener('ended', () => {
+        newStamp.loopCount++;
+        if (newStamp.loopCount < 3) {
+          video.currentTime = 0;
+          video.play().catch(err => console.log('Video playback error:', err));
+        } else {
+          removeStamp(newStamp); // Remove stamp after 3rd loop completes
+        }
+      });
+
+      stamps.push(newStamp);
+      redrawCanvas();
+
+      // Trigger animation after 3 seconds (3000 ms)
+      setTimeout(() => {
+        newStamp.isAnimated = true;
+        newStamp.videoElement.currentTime = 0;
+        newStamp.videoElement.play().then(() => {
+          if (!renderLoopActive) {
+            renderLoopActive = true;
+            renderLoop();
+          }
+        }).catch(err => console.log('Video playback error:', err));
+      }, 3000);
+    }
+
+    // Clear all stamps and stop active video players
+    function clearCanvas() {
+      stamps.forEach(stamp => {
+        if (stamp.videoElement) {
+          stamp.videoElement.pause();
+          stamp.videoElement.remove();
+        }
+      });
+      stamps = [];
+      redrawCanvas();
+    }
+
+    // Event Listeners for Touch and Mouse Click
+    canvas.addEventListener('click', placeStamp);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      placeStamp(e);
+    }, { passive: false });
+
+    // Initialize Game
+    initSidebar();
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+</body>
+</html>
