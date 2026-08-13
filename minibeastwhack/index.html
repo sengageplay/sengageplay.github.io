@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Minibeast Whack-a-Mole</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      margin: 0;
+      padding: 15px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #4a2e18;
+      background-image: radial-gradient(#5c3a1e 15%, transparent 16%), radial-gradient(#382211 15%, transparent 16%);
+      background-size: 60px 60px;
+      background-position: 0 0, 30px 30px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    h1 {
+      margin: 0 0 5px 0;
+      font-size: 2.5rem;
+      color: #f1c40f;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+    }
+
+    .score-board {
+      font-size: 1.8rem;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 25px;
+      border-radius: 30px;
+      border: 2px solid #8b5a2b;
+      display: inline-block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+      max-width: 950px;
+      width: 100%;
+      padding: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+    }
+
+    .hole {
+      position: relative;
+      aspect-ratio: 1;
+      background: #1a0f07;
+      border-radius: 50%;
+      box-shadow: inset 0 12px 20px rgba(0,0,0,0.9), 0 0 0 8px #331e0e;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .hole::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 25%;
+      background: #5c3a1e;
+      border-top: 4px solid #2d1a0d;
+      border-radius: 0 0 50% 50%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .minibeast {
+      position: absolute;
+      width: 60%;
+      height: 60%;
+      left: 20%;
+      bottom: -100%;
+      opacity: 0; /* Default invisible when resting inside the hole */
+      object-fit: contain;
+      transition: bottom 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .hole.active .minibeast {
+      bottom: 20%;
+      opacity: 1;
+    }
+
+    /* Smoother, perfectly-timed keyframes */
+    .minibeast.shake {
+      animation: shake 0.2s ease-in-out forwards;
+    }
+
+    .minibeast.dissolve {
+      animation: dissolve 0.3s ease-out forwards;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(-12deg) scale(1.05); }
+      40% { transform: rotate(12deg) scale(1.05); }
+      60% { transform: rotate(-8deg); }
+      80% { transform: rotate(8deg); }
+    }
+
+    @keyframes dissolve {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.3) translateY(-15px);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Minibeast Whack!</h1>
+    <div class="score-board">Score: <span id="score">0</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="hole" data-index="0"><img class="minibeast" src="" alt="minibeast" /></div>
+    <div class="hole" data-index="1"><img class="minibeast" src="" alt="minibeast" /></div>
+    <div class="hole" data-index="2"><img class="minibeast" src="" alt="minibeast" /></div>
+    <div class="hole" data-index="3"><img class="minibeast" src="" alt="minibeast" /></div>
+    <div class="hole" data-index="4"><img class="minibeast" src="" alt="minibeast" /></div>
+    <div class="hole" data-index="5"><img class="minibeast" src="" alt="minibeast" /></div>
+  </div>
+
+  <script>
+    // EDIT YOUR 9 PNG FILE NAMES HERE:
+    const MINIBEASTS = [
+      'ladybird.png',
+      'spider.png',
+      'centipede.png',
+      'woodlouse.png',
+      'mole.png',
+      'worm.png',
+      'snail.png',
+      'slug.png',
+      'insect9.png'
+    ];
+
+    const holes = document.querySelectorAll('.hole');
+    const scoreDisplay = document.getElementById('score');
+
+    let score = 0;
+    let lastHoleIndex = -1;
+    let currentTimeout = null;
+    let isPlaying = true;
+    let isTransitioning = false;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playPopSound() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.08);
+
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function playTouchSound() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(780, audioCtx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    }
+
+    function getRandomHole() {
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * holes.length);
+      } while (idx === lastHoleIndex);
+      lastHoleIndex = idx;
+      return holes[idx];
+    }
+
+    function getRandomMinibeast() {
+      const idx = Math.floor(Math.random() * MINIBEASTS.length);
+      return MINIBEASTS[idx];
+    }
+
+    function spawnMinibeast() {
+      if (!isPlaying) return;
+
+      isTransitioning = false;
+      const hole = getRandomHole();
+      const img = hole.querySelector('.minibeast');
+
+      img.src = getRandomMinibeast();
+      img.className = 'minibeast';
+
+      hole.classList.add('active');
+      playPopSound();
+
+      currentTimeout = setTimeout(() => {
+        missMinibeast(hole, img);
+      }, 10000);
+    }
+
+    function missMinibeast(hole, img) {
+      if (isTransitioning) return;
+      isTransitioning = true;
+
+      img.classList.add('dissolve');
+
+      setTimeout(() => {
+        hole.classList.remove('active');
+        img.className = 'minibeast';
+        spawnMinibeast();
+      }, 300);
+    }
+
+    function hitMinibeast(hole, img) {
+      if (!isPlaying || isTransitioning || !hole.classList.contains('active')) return;
+      isTransitioning = true;
+
+      clearTimeout(currentTimeout);
+      playTouchSound();
+
+      score++;
+      scoreDisplay.textContent = score;
+
+      // Step 1: Shake for 200ms
+      img.classList.add('shake');
+
+      setTimeout(() => {
+        img.classList.remove('shake');
+        // Step 2: Dissolve for 300ms
+        img.classList.add('dissolve');
+
+        setTimeout(() => {
+          // Step 3: Hide hole while image is 100% invisible, then reset classes
+          hole.classList.remove('active');
+          img.className = 'minibeast';
+          
+          // Step 4: Rapid next spawn
+          setTimeout(spawnMinibeast, 100);
+        }, 300); // Matches CSS dissolve animation perfectly
+      }, 200);   // Matches CSS shake animation perfectly
+    }
+
+    holes.forEach(hole => {
+      const img = hole.querySelector('.minibeast');
+
+      img.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        initAudio();
+        hitMinibeast(hole, img);
+      });
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      spawnMinibeast();
+    });
+  </script>
+</body>
+</html>
