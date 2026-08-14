@@ -20,25 +20,17 @@
 
         /* HEADER & NAVIGATION */
         header {
-            padding: 20px 30px;
+            padding: 25px 20px;
             background-color: #1a1a1e;
             border-bottom: 4px solid #4ade80;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .site-logo {
-            max-width: 240px;
-            height: auto;
-            display: block;
+            text-align: center;
         }
 
         nav {
             display: flex;
-            gap: 20px;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
         }
 
         nav a {
@@ -51,6 +43,21 @@
 
         nav a:hover, nav a.active {
             color: #4ade80;
+        }
+
+        .site-logo {
+            max-width: 280px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        header p {
+            margin-top: 12px;
+            margin-bottom: 0;
+            color: #a1a1aa;
+            font-size: 1.05rem;
         }
 
         /* PAGE CONTAINER */
@@ -148,22 +155,58 @@
             font-size: 1.2rem;
         }
 
-        /* IDEA INVITATION CARD */
-        .idea-card {
-            background-color: #18221c;
-            border: 2px solid #22c55e;
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 30px;
+        /* CONTACT FORM STYLES */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
         }
 
-        .idea-card h2 {
-            color: #4ade80;
-            margin-top: 0;
-            font-size: 1.6rem;
+        .form-group label {
+            display: block;
+            color: #e4e4e7;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1rem;
         }
 
-        /* BUTTONS */
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            background-color: #121214;
+            border: 2px solid #27272a;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #4ade80;
+        }
+
+        .btn-submit {
+            background-color: #4ade80;
+            color: #121214;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            transform: scale(1.02);
+            background-color: #22c55e;
+        }
+
+        /* BUTTONS & FOOTER */
         .cta-container {
             text-align: center;
             margin: 40px 0;
@@ -193,36 +236,21 @@
             font-size: 0.95rem;
             border-top: 1px solid #1a1a1e;
         }
-
-        @media (max-width: 600px) {
-            header {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
     </style>
 </head>
 <body>
 
     <!-- HEADER & NAVIGATION -->
-   <header style="padding: 20px 30px; background-color: #1a1a1e; border-bottom: 4px solid #4ade80; text-align: center;">
-    
-    <!-- TOP NAVIGATION BAR -->
-    <nav style="display: flex; justify-content: center; gap: 30px; margin-bottom: 25px;">
-        <a href="index.html" style="color: #4ade80; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Games</a>
-        <a href="about.html" style="color: #a1a1aa; text-decoration: none; font-weight: 600; font-size: 1.1rem;">About Us</a>
-    </nav>
-
-    <!-- CENTERED MAIN LOGO -->
-    <div style="display: flex; justify-content: center; align-items: center;">
+    <header>
+        <nav>
+            <a href="index.html">Games</a>
+            <a href="about.html" class="active">About Us</a>
+        </nav>
         <a href="index.html">
-            <img src="images/donenowplaylogo.png" alt="DoneNowPlay Logo" class="site-logo" style="max-width: 280px; width: 100%; height: auto; display: block; margin: 0 auto;">
+            <img src="images/donenowplaylogo.png" alt="DoneNowPlay Logo" class="site-logo">
         </a>
-    </div>
-
-    <p style="margin-top: 15px; color: #a1a1aa; font-size: 1.1rem;">Simple symbol games for visual minds.</p>
-
-</header>
+        <p>Simple symbol games for visual minds.</p>
+    </header>
 
     <div class="container">
 
@@ -260,15 +288,36 @@
             </div>
         </div>
 
-        <!-- HAVE A GAME IDEA? -->
-        <div class="idea-card">
-            <h2>Have a Game Idea? Let's Build It!</h2>
+        <!-- CONTACT & GAME IDEAS FORM -->
+        <div class="content-card">
+            <h2>Get in Touch or Share a Game Idea</h2>
             <p>
-                We love hearing directly from parents, teachers, therapists, and players. If there is a specific concept, daily routine, or visual skill your child or pupil is working on, tell us about it!
+                Have a question, feedback, or an idea for a new game? We would love to hear from you! Fill out the simple form below, or send us a direct email at <a href="mailto:donenowplay@gmail.com" style="color: #4ade80; text-decoration: underline;">donenowplay@gmail.com</a>.
             </p>
-            <p>
-                We regularly build custom games inspired by user ideas. As long as the idea fits our core mission—keeping things visual, accessible, low-sensory, and positive—we would love to turn your suggestion into our next game.
-            </p>
+
+            <form action="https://formsubmit.co/donenowplay@gmail.com" method="POST" style="margin-top: 25px;">
+                <!-- Anti-spam honeypot (invisible to humans) -->
+                <input type="text" name="_honey" style="display:none">
+                <!-- Disables captcha for smoother user experience -->
+                <input type="hidden" name="_captcha" value="false">
+
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g., Sarah (Teacher or Parent)" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Your Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="e.g., name@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message or Game Idea</label>
+                    <textarea id="message" name="message" rows="5" placeholder="Tell us about a game concept, skill, or routine you'd like to see..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Send Message</button>
+            </form>
         </div>
 
         <!-- CALL TO ACTION -->
