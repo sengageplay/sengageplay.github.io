@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Hot vs Cold - Categorization Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* TOP HALF: SPLIT SCREEN DROP ZONES */
+    .game-split {
+      display: flex;
+      flex: 1;
+      width: 100%;
+      height: 55vh;
+    }
+
+    .zone {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      gap: 12px;
+      position: relative;
+      transition: background-color 0.2s ease;
+    }
+
+    /* Cold Zone (Left) */
+    .cold-zone {
+      background: #e0f7fa;
+      border-right: 4px solid #b2ebf2;
+    }
+    .cold-zone.highlight {
+      background: #b2ebd0;
+    }
+
+    /* Hot Zone (Right) */
+    .hot-zone {
+      background: #fff3e0;
+      border-left: 4px solid #ffe0b2;
+    }
+    .hot-zone.highlight {
+      background: #ffe0b2;
+    }
+
+    /* Anchor Banners (240px x 150px) */
+    .zone-header {
+      width: 240px;
+      height: 150px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .cold-zone .zone-header { border: 4px solid #0288d1; }
+    .hot-zone .zone-header { border: 4px solid #e64a19; }
+
+    .zone-header img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Grid for Dropped Items inside each zone */
+    .dropped-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: flex-start;
+      gap: 10px;
+      width: 100%;
+      flex: 1;
+      padding: 6px;
+      overflow-y: auto;
+    }
+
+    /* Sorted Cards (110px x 110px) */
+    .sorted-card {
+      width: 110px;
+      height: 110px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 3px solid #ccc;
+      flex-shrink: 0;
+    }
+    .sorted-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* BOTTOM TRAY: FIXED 2 x 5 GRID */
+    .choices-tray {
+      height: 45vh;
+      background: #ffffff;
+      border-top: 4px solid #333333;
+      display: grid;
+      grid-template-columns: repeat(5, 130px);
+      grid-template-rows: repeat(2, 130px);
+      justify-content: center;
+      align-content: center;
+      gap: 12px;
+      padding: 12px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+      z-index: 10;
+    }
+
+    /* Choice Cards */
+    .choice-card {
+      width: 130px;
+      height: 130px;
+      border: 4px solid #222222;
+      border-radius: 20px;
+      background: #fff;
+      cursor: grab;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+      padding: 8px;
+      transition: transform 0.15s ease;
+    }
+    .choice-card:active {
+      cursor: grabbing;
+      transform: scale(1.08);
+    }
+    .choice-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* CONFETTI CANVAS */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SPLIT SCREEN TARGET ZONES -->
+  <div class="game-split">
+    <!-- Cold Zone -->
+    <div class="zone cold-zone" id="cold-target" data-category="cold">
+      <div class="zone-header">
+        <img src="cold.png" alt="Cold">
+      </div>
+      <div class="dropped-container" id="cold-container"></div>
+    </div>
+
+    <!-- Hot Zone -->
+    <div class="zone hot-zone" id="hot-target" data-category="hot">
+      <div class="zone-header">
+        <img src="hot.png" alt="Hot">
+      </div>
+      <div class="dropped-container" id="hot-container"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM CHOICES TRAY (2x5 Grid) -->
+  <div class="choices-tray" id="choices-tray"></div>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <script>
+    // ITEMS DATA DEFINITION (Updated 'summer.png')
+    const items = [
+      // Hot Items (5)
+      { id: 'soup', category: 'hot', src: 'soup.png' },
+      { id: 'coffee', category: 'hot', src: 'coffee.png' },
+      { id: 'sun', category: 'hot', src: 'sun.png' },
+      { id: 'summer', category: 'hot', src: 'summer.png' },
+      { id: 'oven', category: 'hot', src: 'oven.png' },
+      // Cold Items (5)
+      { id: 'winter', category: 'cold', src: 'winter.png' },
+      { id: 'snowflake', category: 'cold', src: 'snowflake.png' },
+      { id: 'milkshake', category: 'cold', src: 'milkshake.png' },
+      { id: 'fridge', category: 'cold', src: 'fridge.png' },
+      { id: 'ice', category: 'cold', src: 'ice.png' }
+    ];
+
+    let sortedCount = 0;
+    let draggedItem = null;
+
+    // AUDIO GENERATOR (Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playDing() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function playBoing() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    // GAME INITIALIZATION
+    function startNewGame() {
+      sortedCount = 0;
+      document.getElementById('cold-container').innerHTML = '';
+      document.getElementById('hot-container').innerHTML = '';
+      
+      const tray = document.getElementById('choices-tray');
+      tray.innerHTML = '';
+
+      // Shuffle items randomly
+      const shuffledItems = [...items].sort(() => Math.random() - 0.5);
+
+      shuffledItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'choice-card';
+        card.dataset.id = item.id;
+        card.dataset.category = item.category;
+        card.dataset.src = item.src;
+        card.draggable = true;
+
+        const img = document.createElement('img');
+        img.src = item.src;
+        card.appendChild(img);
+
+        // Desktop Drag events
+        card.addEventListener('dragstart', handleDragStart);
+
+        // Touch Drag events for tablets
+        setupTouchEvents(card);
+
+        tray.appendChild(card);
+      });
+    }
+
+    // DESKTOP DRAG & DROP LOGIC
+    function handleDragStart(e) {
+      draggedItem = {
+        id: this.dataset.id,
+        category: this.dataset.category,
+        src: this.dataset.src,
+        element: this
+      };
+      e.dataTransfer.setData('text/plain', this.dataset.id);
+    }
+
+    const zones = [document.getElementById('cold-target'), document.getElementById('hot-target')];
+
+    zones.forEach(zone => {
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('highlight');
+      });
+
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('highlight');
+      });
+
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('highlight');
+        if (draggedItem) {
+          evaluateDrop(zone.dataset.category, draggedItem);
+        }
+      });
+    });
+
+    // EVALUATE DROP ACTION
+    function evaluateDrop(targetCategory, itemData) {
+      if (itemData.category === targetCategory) {
+        // Correct Placement
+        playDing();
+        
+        // Append card icon to target zone container
+        const container = document.getElementById(`${targetCategory}-container`);
+        const sortedCard = document.createElement('div');
+        sortedCard.className = 'sorted-card';
+        const img = document.createElement('img');
+        img.src = itemData.src;
+        sortedCard.appendChild(img);
+        container.appendChild(sortedCard);
+
+        // Remove element from bottom choices tray
+        if (itemData.element && itemData.element.parentNode) {
+          itemData.element.parentNode.removeChild(itemData.element);
+        }
+
+        sortedCount++;
+
+        // Check if all 10 items are categorized
+        if (sortedCount === items.length) {
+          triggerWinSequence();
+        }
+      } else {
+        // Incorrect Placement
+        playBoing();
+      }
+      draggedItem = null;
+    }
+
+    // TOUCH DRAG FOR IPAD / TOUCHSCREENS
+    function setupTouchEvents(card) {
+      let initialX, initialY;
+
+      card.addEventListener('touchstart', (e) => {
+        draggedItem = {
+          id: card.dataset.id,
+          category: card.dataset.category,
+          src: card.dataset.src,
+          element: card
+        };
+        const touch = e.touches[0];
+        initialX = touch.clientX;
+        initialY = touch.clientY;
+        card.style.zIndex = '1000';
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const currentX = touch.clientX - initialX;
+        const currentY = touch.clientY - initialY;
+        card.style.transform = `translate(${currentX}px, ${currentY}px) scale(1.08)`;
+      }, { passive: true });
+
+      card.addEventListener('touchend', (e) => {
+        card.style.transform = 'none';
+        card.style.zIndex = '1';
+
+        const touch = e.changedTouches[0];
+
+        // Detect which side screen zone received the touch
+        zones.forEach(zone => {
+          const rect = zone.getBoundingClientRect();
+          if (
+            touch.clientX >= rect.left &&
+            touch.clientX <= rect.right &&
+            touch.clientY >= rect.top &&
+            touch.clientY <= rect.bottom
+          ) {
+            evaluateDrop(zone.dataset.category, draggedItem);
+          }
+        });
+      });
+    }
+
+    // CONFETTI ANIMATION ON GAME WIN
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let confettiParticles = [];
+
+    function triggerWinSequence() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      createConfetti();
+      animateConfetti();
+
+      setTimeout(() => {
+        confettiParticles = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        startNewGame();
+      }, 5000);
+    }
+
+    function createConfetti() {
+      const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#4caf50', '#ffeb3b', '#ff9800'];
+      for (let i = 0; i < 120; i++) {
+        confettiParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 8 + 6,
+          speedY: Math.random() * 3 + 2,
+          speedX: Math.random() * 2 - 1
+        });
+      }
+    }
+
+    function animateConfetti() {
+      if (confettiParticles.length === 0) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      confettiParticles.forEach(p => {
+        p.y += p.speedY;
+        p.x += p.speedX;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      });
+      requestAnimationFrame(animateConfetti);
+    }
+
+    window.onload = startNewGame;
+  </script>
+</body>
+</html>
