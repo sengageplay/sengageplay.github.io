@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us — DoneNowPlay</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121214;
+            color: #e4e4e7;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* HEADER & NAVIGATION */
+        header {
+            padding: 20px 30px;
+            background-color: #1a1a1e;
+            border-bottom: 4px solid #4ade80;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .site-logo {
+            max-width: 240px;
+            height: auto;
+            display: block;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            color: #a1a1aa;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover, nav a.active {
+            color: #4ade80;
+        }
+
+        /* PAGE CONTAINER */
+        .container {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 0 25px;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #a1a1aa;
+            margin: 0 auto;
+        }
+
+        /* CONTENT CARDS */
+        .content-card {
+            background-color: #1a1a1e;
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 30px;
+            border: 2px solid #27272a;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .content-card h2 {
+            color: #4ade80;
+            font-size: 1.6rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        .content-card p {
+            font-size: 1.05rem;
+            color: #d4d4d8;
+            margin-bottom: 16px;
+        }
+
+        .content-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* HIGHLIGHT BOX FOR THE PROMISE */
+        .promise-box {
+            background-color: #121214;
+            border: 2px solid #4ade80;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px 0;
+        }
+
+        .promise-box h3 {
+            color: #ffffff;
+            margin-top: 0;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .promise-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .promise-list li {
+            position: relative;
+            padding-left: 28px;
+            margin-bottom: 12px;
+            color: #e4e4e7;
+            font-size: 1.05rem;
+        }
+
+        .promise-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .promise-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* IDEA INVITATION CARD */
+        .idea-card {
+            background-color: #18221c;
+            border: 2px solid #22c55e;
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 30px;
+        }
+
+        .idea-card h2 {
+            color: #4ade80;
+            margin-top: 0;
+            font-size: 1.6rem;
+        }
+
+        /* BUTTONS */
+        .cta-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background-color: #4ade80;
+            color: #121214;
+            font-size: 1.15rem;
+            font-weight: 700;
+            padding: 16px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            background-color: #22c55e;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #71717a;
+            font-size: 0.95rem;
+            border-top: 1px solid #1a1a1e;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER & NAVIGATION -->
+    <header>
+        <a href="index.html">
+            <img src="images/donenowplaylogo.png" alt="DoneNowPlay Logo" class="site-logo">
+        </a>
+        <nav>
+            <a href="index.html">Games</a>
+            <a href="about.html" class="active">About Us</a>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <!-- HERO SECTION -->
+        <div class="hero">
+            <h1>Welcome to DoneNowPlay</h1>
+            <p>Simple, visual learning games built with care for younger and neurodivergent players.</p>
+        </div>
+
+        <!-- WHY WE ARE HERE -->
+        <div class="content-card">
+            <h2>Why We Built This Space</h2>
+            <p>
+                Hello! DoneNowPlay was created out of a simple belief: every child deserves access to high-quality learning tools, without families or schools having to spend a fortune to get them.
+            </p>
+            <p>
+                Raising and supporting children with Special Educational Needs (SEN) comes with enough costs already. We wanted to build a calm, safe corner of the web where young minds can practice real-world skills—like matching, categorization, sentence structure, emotional awareness, and motor skills—at zero cost and with zero friction.
+            </p>
+        </div>
+
+        <!-- OUR SYMBOLS & GAMES -->
+        <div class="content-card">
+            <h2>Our Own Symbol Library</h2>
+            <p>
+                Visual clarity is everything. To make our games as accessible as possible, we created our very own custom PECS-inspired symbol library. These clear, friendly symbols run through all our games, giving visual thinkers a consistent language they can recognize, trust, and learn from across every activity.
+            </p>
+
+            <div class="promise-box">
+                <h3>Our Promise to Families & Teachers</h3>
+                <ul class="promise-list">
+                    <li><strong>Always 20 Free Games:</strong> There will always be a core collection of 20 games available to play for free, anytime.</li>
+                    <li><strong>No Ads or Distractions:</strong> Zero pop-ups, zero flashing banners, and no hidden tracking. Just pure, calm learning.</li>
+                    <li><strong>Fair & Transparent Pricing:</strong> As our collection grows, we plan to offer an expanded library for a simple, one-off fee of £24.99 for lifetime access. No monthly subscriptions, ever.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- HAVE A GAME IDEA? -->
+        <div class="idea-card">
+            <h2>Have a Game Idea? Let's Build It!</h2>
+            <p>
+                We love hearing directly from parents, teachers, therapists, and players. If there is a specific concept, daily routine, or visual skill your child or pupil is working on, tell us about it!
+            </p>
+            <p>
+                We regularly build custom games inspired by user ideas. As long as the idea fits our core mission—keeping things visual, accessible, low-sensory, and positive—we would love to turn your suggestion into our next game.
+            </p>
+        </div>
+
+        <!-- CALL TO ACTION -->
+        <div class="cta-container">
+            <a href="index.html" class="btn-primary">Play Our 20 Free Games</a>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>© DoneNowPlay — Simple, calm symbol games for visual minds.</p>
+    </footer>
+
+</body>
+</html>
