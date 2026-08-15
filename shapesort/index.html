@@ -1,530 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shape and Color Matcher - Modes & Menu</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f0f4f8;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            user-select: none;
-        }
-        #game-container {
-            text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            position: relative;
-            width: 600px;
-        }
-        h1 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        #score-board {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #555;
-            visibility: hidden; /* Becomes visible when game starts */
-        }
-        canvas {
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            background-color: #ffffff;
-            display: block;
-        }
-        /* Overlays styled cleanly on top of the container */
-        .screen-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(240, 244, 248, 0.98);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-sizing: border-box;
-            z-index: 10;
-        }
-        .menu-box {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 80%;
-            max-width: 450px;
-            box-sizing: border-box;
-        }
-        .menu-box h2 {
-            font-size: 2.2rem;
-            color: #2b3a42;
-            margin: 0 0 15px 0;
-        }
-        .menu-box p {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1rem;
-            line-height: 1.5;
-        }
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-        }
-        .menu-btn {
-            padding: 14px 28px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.1s, background-color 0.2s;
-        }
-        .btn-normal {
-            background-color: #2b8a3e;
-            box-shadow: 0 4px 12px rgba(43, 138, 62, 0.3);
-        }
-        .btn-normal:hover { background-color: #237032; }
-        
-        .btn-infinite {
-            background-color: #cc5de8;
-            box-shadow: 0 4px 12px rgba(204, 93, 232, 0.3);
-        }
-        .btn-infinite:hover { background-color: #ae40ca; }
-        
-        .btn-restart {
-            background-color: #339af0;
-            box-shadow: 0 4px 12px rgba(51, 154, 240, 0.3);
-        }
-        .btn-restart:hover { background-color: #228be6; }
-        
-        .menu-btn:active {
-            transform: scale(0.97);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fill the Gap</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f1f5f9;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    #game-container {
+      background: white;
+      padding: 24px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 0 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #0f172a;
+    }
+
+    #score {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 6px 18px;
+      border-radius: 20px;
+    }
+
+    canvas {
+      border: 2px solid #cbd5e1;
+      border-radius: 16px;
+      background: #ffffff;
+      display: block;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 14px 36px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+  </style>
 </head>
 <body>
 
 <div id="game-container">
-    <h1>Match the Hole!</h1>
-    <div id="score-board">Score: <span id="score">0</span></div>
-    
-    <canvas id="gameCanvas" width="600" height="520"></canvas>
+  <div class="header-bar">
+    <h1>Fill the Gap</h1>
+    <div id="score">Score: 0</div>
+  </div>
 
-    <!-- MAIN MENU OVERLAY -->
-    <div id="main-menu" class="screen-overlay">
-        <div class="menu-box">
-            <h2>Shape Matcher</h2>
-            <p>Drag the options from the bottom row into the center cutout shape. Match the exact geometric profile and primary color to score points!</p>
-            <div class="btn-group">
-                <button class="menu-btn btn-normal" onclick="startGame('normal')">Normal Mode (First to 5)</button>
-                <button class="menu-btn btn-infinite" onclick="startGame('infinite')">Infinite Freeplay</button>
-            </div>
-        </div>
-    </div>
+  <canvas id="gameCanvas" width="720" height="540"></canvas>
 
-    <!-- WIN SCREEN OVERLAY -->
-    <div id="win-overlay" class="screen-overlay" style="display: none;">
-        <div class="menu-box">
-            <h2 style="color: #2b8a3e;">🎉 You Win! 🎉</h2>
-            <p>Flawless performance matching shapes under analytical constraints.</p>
-            <div class="btn-group">
-                <button class="menu-btn btn-restart" onclick="returnToMenu()">Main Menu</button>
-            </div>
-        </div>
-    </div>
+  <!-- START OVERLAY -->
+  <div id="start-overlay" class="overlay">
+    <h2 style="font-size: 2.2rem; color: #0f172a; margin-bottom: 8px;">Fill the Gap</h2>
+    <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 24px;">Tap the correct card below to fill the missing shape gap!</p>
+    <button class="btn" onclick="startGame()">Start Playing</button>
+  </div>
 </div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreElement = document.getElementById('score');
-const scoreBoard = document.getElementById('score-board');
-const mainMenu = document.getElementById('main-menu');
-const winOverlay = document.getElementById('win-overlay');
+const scoreEl = document.getElementById('score');
+const startOverlay = document.getElementById('start-overlay');
 
-// Game constants
-const PRIMARY_COLORS = { 'red': '#FF4B4B', 'yellow': '#FFD43B', 'blue': '#339AF0' };
-const COLOR_NAMES = Object.keys(PRIMARY_COLORS);
-const SHAPES = ['square', 'circle', 'triangle'];
-const TARGET_RECT = { x: 200, y: 40, w: 200, h: 180 };
-const PAUSE_BTN = { x: 15, y: 15, w: 80, h: 35, radius: 6 };
+// List of 6 Shapes with exact theme colors
+const SHAPES = [
+  { id: 'square',    label: 'square',    color: '#E63935' }, // Red
+  { id: 'circle',    label: 'circle',    color: '#38A0DC' }, // Blue
+  { id: 'triangle',  label: 'triangle',  color: '#6BBF59' }, // Green
+  { id: 'rectangle', label: 'rectangle', color: '#8E24AA' }, // Purple
+  { id: 'pentagon',  label: 'pentagon',  color: '#FB8C00' }, // Orange
+  { id: 'hexagon',   label: 'hexagon',   color: '#FDD835' }  // Yellow
+];
 
-// Game Engine State Variables
+const TARGET_RECT = { x: 210, y: 25, w: 300, h: 210, radius: 20 };
+
 let score = 0;
-let gameActive = false; 
-let gameMode = 'normal'; 
-let gameOver = false;
-let isPaused = false;
-
-let targetColor = '';
-let targetShape = '';
-let options = [];
-
-let selectedOption = null;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-
-let feedbackText = '';
-let feedbackColor = '';
-let feedbackTimer = 0;
-
-let confettiParticles = [];
-const CONFETTI_COLORS = ['#FF4B4B', '#FFD43B', '#339AF0', '#FF922B', '#51CF66', '#CC5DE8', '#FCC419'];
+let targetShape = null;
+let choices = [];
+let feedback = { type: '', text: '', color: '', timer: 0 };
+let isHoleFilled = false;
 
 function initRound() {
-    targetColor = COLOR_NAMES[Math.floor(Math.random() * COLOR_NAMES.length)];
-    targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-    
-    options = [];
-    options.push({ shape: targetShape, color: targetColor, isCorrect: true });
-    
-    let wrongColor = COLOR_NAMES.filter(c => c !== targetColor)[Math.floor(Math.random() * 2)];
-    options.push({ shape: targetShape, color: wrongColor, isCorrect: false });
-    
-    let wrongShape = SHAPES.filter(s => s !== targetShape)[Math.floor(Math.random() * 2)];
-    options.push({ shape: wrongShape, color: targetColor, isCorrect: false });
-    
-    let alternateWrongShape = SHAPES.filter(s => s !== targetShape)[Math.floor(Math.random() * 2)];
-    let alternateWrongColor = COLOR_NAMES.filter(c => c !== targetColor)[Math.floor(Math.random() * 2)];
-    options.push({ shape: alternateWrongShape, color: alternateWrongColor, isCorrect: false });
-
-    while(options.length < 6) {
-        let rShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-        let rColor = COLOR_NAMES[Math.floor(Math.random() * COLOR_NAMES.length)];
-        if(!(rShape === targetShape && rColor === targetColor)) {
-            options.push({ shape: rShape, color: rColor, isCorrect: false });
-        }
-    }
-    
-    options.sort(() => Math.random() - 0.5);
-    
-    const startX = 100;
-    const startY = 380;
-    const spacingX = 180;
-    const spacingY = 90;
-    
-    options.forEach((opt, index) => {
-        opt.homeX = startX + (index % 3) * spacingX;
-        opt.homeY = startY + Math.floor(index / 3) * spacingY;
-        opt.x = opt.homeX;
-        opt.y = opt.homeY;
-        opt.radius = 30; 
-    });
+  isHoleFilled = false;
+  
+  // Pick random target shape
+  targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+  
+  // Pick 2 other random distractor shapes
+  let remaining = SHAPES.filter(s => s.id !== targetShape.id);
+  remaining.sort(() => Math.random() - 0.5);
+  
+  let optionPool = [targetShape, remaining[0], remaining[1]].sort(() => Math.random() - 0.5);
+  
+  // Positioning for 3 LARGE cards in bottom tray
+  const startX = 40;
+  const startY = 320;
+  const cardWidth = 180;
+  const cardHeight = 180;
+  const spacingX = 230;
+  
+  choices = optionPool.map((shape, index) => {
+    return {
+      ...shape,
+      x: startX + index * spacingX,
+      y: startY,
+      w: cardWidth,
+      h: cardHeight,
+      isCorrect: shape.id === targetShape.id
+    };
+  });
 }
 
-function startGame(mode) {
-    gameMode = mode;
-    score = 0;
-    gameOver = false;
-    isPaused = false;
-    gameActive = true;
-    confettiParticles = [];
-    
-    if (gameMode === 'normal') {
-        scoreElement.innerHTML = `0 <span>/ 5</span>`;
-    } else {
-        scoreElement.innerHTML = `0 <span>(Infinite)</span>`;
-    }
-    
-    mainMenu.style.display = 'none';
-    winOverlay.style.display = 'none';
-    scoreBoard.style.visibility = 'visible';
-    
-    feedbackTimer = 0;
-    initRound();
+function startGame() {
+  score = 0;
+  scoreEl.textContent = `Score: 0`;
+  startOverlay.style.display = 'none';
+  initRound();
+  requestAnimationFrame(gameLoop);
 }
 
-function returnToMenu() {
-    gameActive = false;
-    gameOver = false;
-    isPaused = false;
-    mainMenu.style.display = 'flex';
-    winOverlay.style.display = 'none';
-    scoreBoard.style.visibility = 'hidden';
-}
+// Universal Vector Path Drawer for all 6 shapes
+function drawShapePath(shapeId, cx, cy, size) {
+  ctx.beginPath();
 
-function createConfetti() {
-    confettiParticles = [];
-    for (let i = 0; i < 120; i++) {
-        confettiParticles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * -canvas.height - 20,
-            w: Math.random() * 8 + 6,
-            h: Math.random() * 12 + 8,
-            color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-            speedY: Math.random() * 3 + 2,
-            speedX: Math.random() * 2 - 1,
-            rotation: Math.random() * 360,
-            rotationSpeed: Math.random() * 4 - 2,
-            wobble: Math.random() * 10,
-            wobbleSpeed: Math.random() * 0.05 + 0.02
-        });
-    }
-}
-
-function updateAndDrawConfetti() {
-    confettiParticles.forEach(p => {
-        p.y += p.speedY;
-        p.wobble += p.wobbleSpeed;
-        p.x += p.speedX + Math.sin(p.wobble) * 0.5;
-        p.rotation += p.rotationSpeed;
-
-        if (p.y > canvas.height) {
-            p.y = -20;
-            p.x = Math.random() * canvas.width;
-        }
-
-        ctx.save();
-        ctx.translate(p.x + p.w/2, p.y + p.h/2);
-        ctx.rotate(p.rotation * Math.PI / 180);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.w / 2 * Math.cos(p.wobble), -p.h / 2, p.w * Math.cos(p.wobble), p.h);
-        ctx.restore();
-    });
-}
-
-function defineShapePath(x, y, size, shape) {
-    ctx.beginPath();
-    if (shape === 'square') {
-        ctx.rect(x - size/2, y - size/2, size, size);
-    } else if (shape === 'circle') {
-        ctx.arc(x, y, size/2, 0, Math.PI * 2);
-    } else if (shape === 'triangle') {
-        ctx.moveTo(x, y - size/2);
-        ctx.lineTo(x + size/2, y + size/2);
-        ctx.lineTo(x - size/2, y + size/2);
-        ctx.closePath();
-    }
-}
-
-function drawRoundedRect(x, y, width, height, radius, fillStyle, strokeStyle) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
+  if (shapeId === 'square') {
+    ctx.rect(cx - size/2, cy - size/2, size, size);
+  } else if (shapeId === 'circle') {
+    ctx.arc(cx, cy, size/2, 0, Math.PI * 2);
+  } else if (shapeId === 'triangle') {
+    const height = size * (Math.sqrt(3) / 2);
+    ctx.moveTo(cx, cy - height/2 - 4);
+    ctx.lineTo(cx + size/2, cy + height/2);
+    ctx.lineTo(cx - size/2, cy + height/2);
     ctx.closePath();
-    if(fillStyle) {
-        ctx.fillStyle = fillStyle;
-        ctx.fill();
+  } else if (shapeId === 'rectangle') {
+    const w = size * 1.3;
+    const h = size * 0.8;
+    ctx.rect(cx - w/2, cy - h/2, w, h);
+  } else if (shapeId === 'pentagon') {
+    const r = size / 1.8;
+    for (let i = 0; i < 5; i++) {
+      const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
-    if(strokeStyle) {
-        ctx.strokeStyle = strokeStyle;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+    ctx.closePath();
+  } else if (shapeId === 'hexagon') {
+    const r = size / 1.8;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * 2 * Math.PI / 6) - Math.PI / 6;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
+    ctx.closePath();
+  }
+}
+
+// Function to render shapes with custom colors & black outlines
+function drawShapePiece(shapeId, cx, cy, size, fillColor, strokeColor, strokeWidth = 5) {
+  ctx.save();
+  ctx.fillStyle = fillColor;
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  drawShapePath(shapeId, cx, cy, size);
+  
+  ctx.fill();
+  if (strokeWidth > 0) ctx.stroke();
+  ctx.restore();
+}
+
+function drawCardBackground(x, y, width, height, radius, fillStyle) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Dynamic Flashcard Generator
+function drawFlashcard(choice) {
+  ctx.save();
+  
+  // Card base with soft shadow & rounded corners
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 4;
+  
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.roundRect(choice.x, choice.y, choice.w, choice.h, 16);
+  ctx.fill();
+  
+  // Reset shadow for crisp border drawing
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Colored Shape in Center
+  const cx = choice.x + choice.w / 2;
+  const cy = choice.y + choice.h / 2 - 14;
+  drawShapePiece(choice.id, cx, cy, 80, choice.color, '#000000', 5);
+
+  // Lowercase Text Label
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '600 20px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(choice.label, cx, choice.y + choice.h - 18);
+  
+  ctx.restore();
+}
+
+// Draws a Vibrant Green Vector Tick Badge
+function drawGreenTick(cx, cy) {
+  ctx.save();
+
+  // Glowing Green Circle Badge
+  ctx.shadowColor = 'rgba(34, 197, 94, 0.4)';
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = '#22c55e'; // Vibrant Green
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Reset shadow for inner tick
+  ctx.shadowColor = 'transparent';
+
+  // White Vector Checkmark
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy + 1);
+  ctx.lineTo(cx - 2, cy + 7);
+  ctx.lineTo(cx + 9, cy - 6);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    if (!gameActive) return; 
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. TARGET CARD
-    ctx.save();
-    ctx.fillStyle = PRIMARY_COLORS[targetColor];
-    ctx.fillRect(TARGET_RECT.x, TARGET_RECT.y, TARGET_RECT.w, TARGET_RECT.h);
-    
-    ctx.globalCompositeOperation = 'destination-out';
-    defineShapePath(TARGET_RECT.x + TARGET_RECT.w/2, TARGET_RECT.y + TARGET_RECT.h/2, 60, targetShape);
-    ctx.fillStyle = "black";
-    ctx.fill();
-    ctx.restore();
+  if (!targetShape) return;
 
-    ctx.strokeStyle = '#cccccc';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(TARGET_RECT.x, TARGET_RECT.y, TARGET_RECT.w, TARGET_RECT.h);
-    
-    // Split line
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(30, 295);
-    ctx.lineTo(570, 295);
-    ctx.stroke();
+  // 1. Top Target Board Card
+  drawCardBackground(TARGET_RECT.x, TARGET_RECT.y, TARGET_RECT.w, TARGET_RECT.h, TARGET_RECT.radius, targetShape.color);
 
-    // 2. CHOICES ROW
-    options.forEach(opt => {
-        if (opt !== selectedOption) {
-            defineShapePath(opt.x, opt.y, 55, opt.shape);
-            ctx.fillStyle = PRIMARY_COLORS[opt.color];
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-    });
+  const centerX = TARGET_RECT.x + TARGET_RECT.w / 2;
+  const centerY = TARGET_RECT.y + TARGET_RECT.h / 2;
 
-    if (selectedOption) {
-        ctx.save();
-        ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetY = 4;
-        defineShapePath(selectedOption.x, selectedOption.y, 60, selectedOption.shape);
-        ctx.fillStyle = PRIMARY_COLORS[selectedOption.color];
-        ctx.fill();
-        ctx.restore();
-    }
-    
-    // 3. TEXT NOTIFICATIONS
-    if (feedbackTimer > 0) {
-        ctx.fillStyle = feedbackColor;
-        ctx.font = "bold 22px system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(feedbackText, canvas.width / 2, 325);
-        feedbackTimer--;
-    }
+  // 2. Cutout Hole OR Fitted Shape Piece
+  if (isHoleFilled) {
+    drawShapePiece(targetShape.id, centerX, centerY, 110, targetShape.color, '#000000', 6);
+  } else {
+    // White hole with black outline
+    drawShapePiece(targetShape.id, centerX, centerY, 110, '#FFFFFF', '#000000', 5);
+  }
 
-    // 4. ACTION BAR (PAUSE SYSTEM CONTROL)
-    if (!gameOver) {
-        drawRoundedRect(PAUSE_BTN.x, PAUSE_BTN.y, PAUSE_BTN.w, PAUSE_BTN.h, PAUSE_BTN.radius, isPaused ? "#495057" : "#e9ecef", "#ced4da");
-        ctx.fillStyle = isPaused ? "#ffffff" : "#495057";
-        ctx.font = "bold 14px system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(isPaused ? "Resume" : "⏸ Pause", PAUSE_BTN.x + PAUSE_BTN.w/2, PAUSE_BTN.y + PAUSE_BTN.h/2);
-        ctx.textBaseline = "alphabetic";
-    }
+  // Tray Divider Line
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(20, 270);
+  ctx.lineTo(700, 270);
+  ctx.stroke();
 
-    // 5. PAUSED MASK LAYER RENDER
-    if (isPaused) {
-        ctx.fillStyle = "rgba(240, 244, 248, 0.75)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        drawRoundedRect(PAUSE_BTN.x, PAUSE_BTN.y, PAUSE_BTN.w, PAUSE_BTN.h, PAUSE_BTN.radius, "#228be6", "#1c7ed6");
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 14px system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("▶ Resume", PAUSE_BTN.x + PAUSE_BTN.w/2, PAUSE_BTN.y + PAUSE_BTN.h/2);
-        ctx.textBaseline = "alphabetic";
+  // 3. Draw Bottom Flashcard Choices
+  choices.forEach(c => {
+    drawFlashcard(c);
+  });
 
-        ctx.fillStyle = "#495057";
-        ctx.font = "bold 32px system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("GAME PAUSED", canvas.width / 2, canvas.height / 2);
-    }
-
-    // 6. CONFETTI ANIMATION RUNNER
-    if (gameOver) {
-        updateAndDrawConfetti();
-    }
-}
-
-function getMousePos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
-}
-
-canvas.addEventListener('mousedown', function(e) {
-    if (!gameActive || gameOver) return;
-    const pos = getMousePos(e);
-    
-    if (pos.x >= PAUSE_BTN.x && pos.x <= PAUSE_BTN.x + PAUSE_BTN.w &&
-        pos.y >= PAUSE_BTN.y && pos.y <= PAUSE_BTN.y + PAUSE_BTN.h) {
-        isPaused = !isPaused; 
-        if (selectedOption) { 
-            selectedOption.x = selectedOption.homeX;
-            selectedOption.y = selectedOption.homeY;
-            selectedOption = null;
-        }
-        return; 
-    }
-
-    if (isPaused) return; 
-
-    for (let opt of options) {
-        const dist = Math.sqrt((pos.x - opt.x)**2 + (pos.y - opt.y)**2);
-        if (dist < opt.radius + 10) {
-            selectedOption = opt;
-            dragOffsetX = pos.x - opt.x;
-            dragOffsetY = pos.y - opt.y;
-            break;
-        }
-    }
-});
-
-canvas.addEventListener('mousemove', function(e) {
-    if (!selectedOption || gameOver || isPaused || !gameActive) return;
-    const pos = getMousePos(e);
-    selectedOption.x = pos.x - dragOffsetX;
-    selectedOption.y = pos.y - dragOffsetY;
-});
-
-canvas.addEventListener('mouseup', function(e) {
-    if (!selectedOption || gameOver || isPaused || !gameActive) return;
-    
-    const targetCenterX = TARGET_RECT.x + TARGET_RECT.w / 2;
-    const targetCenterY = TARGET_RECT.y + TARGET_RECT.h / 2;
-    const distToHole = Math.sqrt((selectedOption.x - targetCenterX)**2 + (selectedOption.y - targetCenterY)**2);
-    
-    if (distToHole < 70) { 
-        if (selectedOption.isCorrect) {
-            score++;
-            
-            if (gameMode === 'normal') {
-                scoreElement.innerHTML = `${score} <span>/ 5</span>`;
-            } else {
-                scoreElement.innerHTML = `${score} <span>(Infinite)</span>`;
-            }
-            
-            feedbackText = "✨ Match Found! Excellent! ✨";
-            feedbackColor = "#2B8A3E";
-            feedbackTimer = 60;
-            
-            if (gameMode === 'normal' && score >= 5) {
-                gameOver = true;
-                createConfetti();
-                winOverlay.style.display = 'flex';
-            } else {
-                initRound();
-            }
-        } else {
-            feedbackText = "❌ Shape doesn't fit or color is wrong!";
-            feedbackColor = "#C92A2A";
-            feedbackTimer = 60;
-            selectedOption.x = selectedOption.homeX;
-            selectedOption.y = selectedOption.homeY;
-        }
+  // 4. Feedback Indicator
+  if (feedback.timer > 0) {
+    if (feedback.type === 'tick') {
+      drawGreenTick(canvas.width / 2, 295);
     } else {
-        selectedOption.x = selectedOption.homeX;
-        selectedOption.y = selectedOption.homeY;
+      ctx.fillStyle = feedback.color;
+      ctx.font = 'bold 24px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(feedback.text, canvas.width / 2, 302);
     }
-    
-    selectedOption = null;
-});
+    feedback.timer--;
+  }
+}
+
+function handleSelect(e) {
+  if (feedback.timer > 20 || isHoleFilled) return; 
+
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const clickX = clientX - rect.left;
+  const clickY = clientY - rect.top;
+
+  for (let c of choices) {
+    if (clickX >= c.x && clickX <= c.x + c.w &&
+        clickY >= c.y && clickY <= c.y + c.h) {
+      
+      if (c.isCorrect) {
+        score++;
+        scoreEl.textContent = `Score: ${score}`;
+        isHoleFilled = true;
+        feedback = { type: 'tick', timer: 45 };
+        
+        // Endless loop: seamlessly generate next round
+        setTimeout(() => {
+          initRound();
+        }, 850);
+
+      } else {
+        feedback = { type: 'text', text: "❌ Try Again!", color: "#dc2626", timer: 40 };
+      }
+      break;
+    }
+  }
+}
+
+canvas.addEventListener('click', handleSelect);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleSelect(e); });
 
 function gameLoop() {
-    draw();
-    requestAnimationFrame(gameLoop);
+  draw();
+  requestAnimationFrame(gameLoop);
 }
-
-gameLoop();
 </script>
 
 </body>
