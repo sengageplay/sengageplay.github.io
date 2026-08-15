@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Color Match Game</title>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      /* Prevents unwanted highlighting/selection on smart boards and touch screens */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 10px;
+      overflow: hidden; /* Guarantees zero page scrolling */
+      background-color: #f8f9fa;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-evenly; /* Evenly spaces elements vertically */
+    }
+
+    /* Top Header Display */
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      max-width: 90vw;
+    }
+
+    /* Keeps choose.png and target img identical in height */
+    .header-container img {
+      height: min(12vh, 100px); 
+      width: auto;
+      object-fit: contain;
+    }
+
+    .status-bar {
+      font-size: min(4vw, 1.4rem);
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+      margin: 2px 0;
+    }
+
+    /* 4x4 Grid - Tighter gaps and dynamically scaled size */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px; /* Tighter spacing between squares */
+      width: min(85vw, 68vh); /* Dynamically shrinks to fit mobile or expands for smart boards */
+      aspect-ratio: 1;
+    }
+
+    .tile {
+      aspect-ratio: 1;
+      background-color: #ffffff;
+      border: 3px solid #ccc;
+      border-radius: 12px;
+      padding: 6px;
+      cursor: pointer;
+      transition: transform 0.1s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .tile:active {
+      transform: scale(0.96); /* Touch feedback for smart boards */
+    }
+
+    @media (hover: hover) {
+      .tile:hover {
+        transform: scale(1.03);
+      }
+    }
+
+    .tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .tile.found {
+      border-color: #2ec4b6;
+      background-color: #e6f9f7;
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .tile.shake {
+      animation: shake 0.3s;
+      border-color: #e71d36;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .win-message {
+      grid-column: span 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: min(8vw, 3rem);
+      font-weight: bold;
+      color: #2ec4b6;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Display -->
+  <div class="header-container">
+    <img src="choose.png" alt="Choose Prompt">
+    <img id="target-img" src="" alt="Target Color">
+  </div>
+
+  <div class="status-bar">
+    Round <span id="round-num">1</span> of 5 | Found: <span id="found-count">0</span> / 3
+  </div>
+
+  <!-- 4x4 Grid -->
+  <div id="grid" class="grid"></div>
+
+  <script>
+    const totalRounds = 5;
+    const allImages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    
+    let roundTargets = [];
+    let currentRoundIndex = 0;
+    let currentTarget = null;
+    let foundInRound = 0;
+
+    const targetImgEl = document.getElementById('target-img');
+    const roundNumEl = document.getElementById('round-num');
+    const foundCountEl = document.getElementById('found-count');
+    const gridEl = document.getElementById('grid');
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function initGame() {
+      currentRoundIndex = 0;
+      const shuffledAll = shuffle([...allImages]);
+      roundTargets = shuffledAll.slice(0, totalRounds);
+      startRound();
+    }
+
+    function generateGridPositions(targetValue) {
+      const grid = new Array(16).fill(null);
+      const otherImages = allImages.filter(num => num !== targetValue);
+
+      // Pick 3 distinct rows and columns for target icons
+      const rows = shuffle([0, 1, 2, 3]).slice(0, 3);
+      const cols = shuffle([0, 1, 2, 3]).slice(0, 3);
+
+      const targetIndices = [
+        rows[0] * 4 + cols[0],
+        rows[1] * 4 + cols[1],
+        rows[2] * 4 + cols[2]
+      ];
+
+      targetIndices.forEach(idx => {
+        grid[idx] = targetValue;
+      });
+
+      for (let i = 0; i < 16; i++) {
+        if (grid[i] === null) {
+          const randomOther = otherImages[Math.floor(Math.random() * otherImages.length)];
+          grid[i] = randomOther;
+        }
+      }
+
+      return grid;
+    }
+
+    function startRound() {
+      foundInRound = 0;
+      currentTarget = roundTargets[currentRoundIndex];
+      
+      roundNumEl.textContent = currentRoundIndex + 1;
+      foundCountEl.textContent = foundInRound;
+      targetImgEl.src = `${currentTarget}.png`;
+
+      const tiles = generateGridPositions(currentTarget);
+      renderGrid(tiles);
+    }
+
+    function renderGrid(tiles) {
+      gridEl.innerHTML = '';
+      tiles.forEach((imgNum) => {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        
+        const img = document.createElement('img');
+        img.src = `${imgNum}.png`;
+        tile.appendChild(img);
+
+        tile.addEventListener('pointerdown', (e) => {
+          e.preventDefault(); // Prevents touch ghost-clicks
+          handleTileClick(tile, imgNum);
+        });
+        
+        gridEl.appendChild(tile);
+      });
+    }
+
+    function handleTileClick(tile, imgNum) {
+      if (tile.classList.contains('found')) return;
+
+      if (imgNum === currentTarget) {
+        tile.classList.add('found');
+        foundInRound++;
+        foundCountEl.textContent = foundInRound;
+
+        if (foundInRound === 3) {
+          setTimeout(() => {
+            currentRoundIndex++;
+            if (currentRoundIndex < totalRounds) {
+              startRound();
+            } else {
+              endGame();
+            }
+          }, 350);
+        }
+      } else {
+        tile.classList.add('shake');
+        setTimeout(() => tile.classList.remove('shake'), 300);
+      }
+    }
+
+    function endGame() {
+      gridEl.innerHTML = '<div class="win-message">You Win! 🎉</div>';
+      
+      confetti({
+        particleCount: 150,
+        spread: 90,
+        origin: { y: 0.6 }
+      });
+
+      setTimeout(() => {
+        initGame();
+      }, 4000);
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
