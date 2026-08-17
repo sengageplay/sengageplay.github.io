@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Match Game - Version 3</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #eef2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { color: #222; margin-bottom: 5px; }
+    .level-title { font-size: 1.3rem; color: #555; margin-bottom: 20px; font-weight: 600; }
+
+    .game-container {
+      display: flex;
+      gap: 25px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .canvas-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    .canvas-panel h3 { margin-bottom: 12px; color: #444; }
+
+    .target-wrapper {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    svg {
+      width: 450px;
+      height: 450px;
+      border: 3px solid #d0d7de;
+      border-radius: 12px;
+      background-color: #ffffff;
+      display: block;
+    }
+
+    .target-canvas path, .target-canvas circle, .target-canvas polygon, .target-canvas rect {
+      cursor: pointer;
+      transition: fill 0.15s ease;
+    }
+    .target-canvas path:hover, .target-canvas circle:hover, .target-canvas polygon:hover, .target-canvas rect:hover {
+      stroke: #111;
+      stroke-width: 3.5px;
+    }
+
+    .palette-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      gap: 8px;
+      width: 290px;
+      height: 450px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+    }
+    .swatch {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 3px solid #e2e8f0;
+      background-color: #ffffff;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 2px;
+    }
+    .swatch img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .swatch:hover {
+      transform: scale(1.04);
+      border-color: #a0aec0;
+    }
+    .swatch.active {
+      border-color: #2b6cb0;
+      border-width: 4px;
+      transform: scale(1.06);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.3s ease-in-out; }
+  </style>
+</head>
+<body>
+
+  <h1>Color Match Game</h1>
+  <div class="level-title" id="levelTitle">Level 1</div>
+
+  <div class="game-container">
+    <div class="canvas-panel">
+      <h3>Reference Image</h3>
+      <div id="referenceContainer"></div>
+    </div>
+
+    <div class="canvas-panel">
+      <h3>Color This Picture</h3>
+      <div class="target-wrapper">
+        <div id="targetContainer" class="target-canvas"></div>
+        <div class="palette-container" id="palette"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const YOUR_COLORS = [
+      { name: 'red',         hex: '#D80000', png: 'red.png' },
+      { name: 'orange',      hex: '#E07D00', png: 'orange.png' },
+      { name: 'yellow',      hex: '#F0E000', png: 'yellow.png' },
+      { name: 'light_green', hex: '#A8F768', png: 'light_green.png' },
+      { name: 'green',        hex: '#0F8214', png: 'green.png' },
+      { name: 'light_blue',  hex: '#00A89E', png: 'light_blue.png' },
+      { name: 'blue',        hex: '#083D9F', png: 'blue.png' },
+      { name: 'purple',      hex: '#71007F', png: 'purple.png' },
+      { name: 'pink',        hex: '#C03667', png: 'pink.png' },
+      { name: 'brown',       hex: '#8D5F2E', png: 'brown.png' },
+      { name: 'grey',        hex: '#7F8182', png: 'grey.png' },
+      { name: 'black',       hex: '#000000', png: 'black.png' }
+    ];
+
+    const LEVELS = [
+      {
+        title: 'Level 1: Rocket Ship',
+        bg: '#0B132B',
+        segments: [
+          { id: 'space_bg',    targetColor: 'blue',        type: 'path', path: 'M 0 0 L 450 0 L 450 450 L 0 450 Z' },
+          { id: 'star_1',      targetColor: 'yellow',      type: 'circle', cx: 80, cy: 90, r: 18 },
+          { id: 'star_2',      targetColor: 'yellow',      type: 'circle', cx: 370, cy: 120, r: 22 },
+          { id: 'star_3',      targetColor: 'yellow',      type: 'circle', cx: 70, cy: 320, r: 18 },
+          { id: 'star_4',      targetColor: 'yellow',      type: 'circle', cx: 380, cy: 350, r: 20 },
+          { id: 'moon',        targetColor: 'grey',        type: 'circle', cx: 360, cy: 220, r: 35 },
+          { id: 'fin_left',    targetColor: 'red',         type: 'path', path: 'M 180 230 L 130 310 L 180 290 Z' },
+          { id: 'fin_right',   targetColor: 'red',         type: 'path', path: 'M 270 230 L 320 310 L 270 290 Z' },
+          { id: 'fire_outer',  targetColor: 'orange',     type: 'path', path: 'M 195 310 L 225 410 L 255 310 Z' },
+          { id: 'fire_inner',  targetColor: 'yellow',      type: 'path', path: 'M 210 310 L 225 370 L 240 310 Z' },
+          { id: 'rocket_body', targetColor: 'grey',        type: 'path', path: 'M 180 150 L 270 150 L 270 310 L 180 310 Z' },
+          { id: 'nose_cone',   targetColor: 'red',         type: 'path', path: 'M 180 150 C 180 70 270 70 270 150 Z' },
+          { id: 'window_rim',  targetColor: 'black',       type: 'circle', cx: 225, cy: 200, r: 32 },
+          { id: 'window_glass',targetColor: 'light_blue',  type: 'circle', cx: 225, cy: 200, r: 22 }
+        ]
+      },
+      {
+        title: 'Level 2: Whale',
+        bg: '#EBF8FF',
+        segments: [
+          { id: 'sky_bg',      targetColor: 'light_blue',  type: 'path', path: 'M 0 0 L 450 0 L 450 360 L 0 360 Z' },
+          { id: 'sun_disk',    targetColor: 'yellow',      type: 'circle', cx: 380, cy: 70, r: 35 },
+          { id: 'water_base',  targetColor: 'blue',        type: 'path', path: 'M 0 360 L 450 360 L 450 450 L 0 450 Z' },
+          { id: 'tail_fin',    targetColor: 'purple',      type: 'path', path: 'M 90 260 L 40 210 L 40 310 Z' },
+          { id: 'main_body',   targetColor: 'purple',      type: 'path', path: 'M 80 260 C 80 160 380 160 380 260 C 380 340 80 340 80 260 Z' },
+          { id: 'belly_panel', targetColor: 'pink',        type: 'path', path: 'M 150 280 C 150 210 330 210 330 280 C 330 330 150 330 150 280 Z' },
+          { id: 'flipper',     targetColor: 'purple',      type: 'path', path: 'M 220 280 C 180 330 220 360 250 310 Z' },
+          { id: 'eye_ball',    targetColor: 'black',       type: 'circle', cx: 320, cy: 220, r: 12 },
+          { id: 'spout_water', targetColor: 'light_blue',  type: 'path', path: 'M 270 170 Q 240 100 210 110 Q 270 130 270 170 Q 270 100 330 110 Q 280 130 270 170 Z' }
+        ]
+      },
+      {
+        title: 'Level 3: Ice Cream Cone',
+        bg: '#FEFCBF',
+        segments: [
+          { id: 'bg_space',    targetColor: 'pink',        type: 'path', path: 'M 0 0 L 450 0 L 450 450 L 0 450 Z' },
+          { id: 'cone_stick',  targetColor: 'brown',       type: 'path', path: 'M 190 240 L 260 240 L 225 430 Z' },
+          { id: 'scoop_bottom',targetColor: 'brown',       type: 'circle', cx: 225, cy: 230, r: 65 },
+          { id: 'scoop_middle',targetColor: 'light_green', type: 'circle', cx: 225, cy: 160, r: 60 },
+          { id: 'scoop_top',   targetColor: 'yellow',      type: 'circle', cx: 225, cy: 100, r: 52 },
+          { id: 'cherry_top',  targetColor: 'red',         type: 'circle', cx: 225, cy: 40, r: 28 }
+        ]
+      },
+      {
+        title: 'Level 4: Hot Air Balloon',
+        bg: '#EBF8FF',
+        segments: [
+          { id: 'sky_bg',       targetColor: 'light_blue',  type: 'path', path: 'M 0 0 L 450 0 L 450 330 L 0 330 Z' },
+          { id: 'sun_disk',     targetColor: 'yellow',      type: 'circle', cx: 70, cy: 70, r: 35 },
+          { id: 'hill_back',    targetColor: 'light_green', type: 'path', path: 'M 0 330 Q 150 280 300 340 L 450 320 L 450 450 L 0 450 Z' },
+          { id: 'hill_front',   targetColor: 'green',       type: 'path', path: 'M 0 370 Q 200 320 450 360 L 450 450 L 0 450 Z' },
+          { id: 'balloon_left', targetColor: 'red',         type: 'path', path: 'M 225 40 C 130 40 140 180 195 220 L 225 220 Z' },
+          { id: 'balloon_mid',  targetColor: 'orange',      type: 'path', path: 'M 225 40 C 180 40 185 180 210 220 L 240 220 C 265 180 270 40 225 40 Z' },
+          { id: 'balloon_right',targetColor: 'yellow',      type: 'path', path: 'M 225 40 C 320 40 310 180 255 220 L 225 220 Z' },
+          { id: 'basket_rope',  targetColor: 'black',       type: 'path', path: 'M 195 220 L 205 260 L 245 260 L 255 220 Z' },
+          { id: 'basket_box',   targetColor: 'brown',       type: 'rect', x: 200, y: 260, width: 50, height: 40 }
+        ]
+      },
+      {
+        title: 'Level 5: Flower',
+        bg: '#F0FFF4',
+        segments: [
+          { id: 'bg_field',    targetColor: 'light_green', type: 'path', path: 'M 0 0 L 450 0 L 450 450 L 0 450 Z' },
+          { id: 'stem_main',   targetColor: 'green',       type: 'path', path: 'M 210 220 L 240 220 L 240 420 L 210 420 Z' },
+          { id: 'leaf_left',   targetColor: 'green',       type: 'path', path: 'M 215 320 Q 120 280 130 350 Q 180 360 215 330 Z' },
+          { id: 'leaf_right',  targetColor: 'green',       type: 'path', path: 'M 235 300 Q 330 260 320 330 Q 270 340 235 310 Z' },
+          { id: 'petal_top',   targetColor: 'red',         type: 'circle', cx: 225, cy: 90, r: 50 },
+          { id: 'petal_bottom',targetColor: 'red',         type: 'circle', cx: 225, cy: 210, r: 50 },
+          { id: 'petal_left',  targetColor: 'red',         type: 'circle', cx: 165, cy: 150, r: 50 },
+          { id: 'petal_right', targetColor: 'red',         type: 'circle', cx: 285, cy: 150, r: 50 },
+          { id: 'flower_core', targetColor: 'yellow',      type: 'circle', cx: 225, cy: 150, r: 40 }
+        ]
+      },
+      {
+        title: 'Level 6: Patchwork Quilt',
+        bg: '#FFFFFF',
+        segments: generateQuiltSegments()
+      }
+    ];
+
+    function generateQuiltSegments() {
+      let colorList = [];
+      YOUR_COLORS.forEach(c => {
+        colorList.push(c.name);
+        colorList.push(c.name);
+      });
+
+      const shuffledIndices = [
+        0,  8,  4, 18, 12,  2,
+        14, 22, 10,  6, 20, 16,
+        3,  19, 13,  1,  9,  5,
+        17, 11, 23, 15,  7, 21
+      ];
+
+      const mixedColors = shuffledIndices.map(i => colorList[i]);
+
+      const cols = 6;
+      const rows = 4;
+      const squareSize = 450 / cols; // 75px
+      const segments = [];
+
+      let index = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          segments.push({
+            id: `quilt_${r}_${c}`,
+            targetColor: mixedColors[index],
+            type: 'rect',
+            x: c * squareSize,
+            y: r * squareSize,
+            width: squareSize,
+            height: squareSize
+          });
+          index++;
+        }
+      }
+      return segments;
+    }
+
+    let currentLevelIndex = 0;
+    let selectedColor = null;
+    let paintedSegments = {};
+
+    function initPalette() {
+      const palette = document.getElementById('palette');
+      palette.innerHTML = '';
+
+      YOUR_COLORS.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'swatch';
+
+        const img = document.createElement('img');
+        img.src = color.png;
+        img.alt = color.name;
+        
+        img.onerror = () => { 
+          img.style.display = 'none'; 
+          swatch.style.backgroundColor = color.hex;
+        }; 
+        swatch.appendChild(img);
+
+        swatch.addEventListener('click', () => {
+          document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+          swatch.classList.add('active');
+          selectedColor = color.name;
+        });
+
+        palette.appendChild(swatch);
+      });
+    }
+
+    function loadLevel(index) {
+      const level = LEVELS[index];
+      document.getElementById('levelTitle').textContent = level.title;
+      paintedSegments = {};
+
+      const createSVG = (isTarget) => {
+        let svg = `<svg viewBox="0 0 450 450" style="background-color: ${level.bg}">`;
+        level.segments.forEach(seg => {
+          const colorObj = YOUR_COLORS.find(c => c.name === seg.targetColor) || { hex: '#FFFFFF' };
+          const fill = isTarget ? '#FFFFFF' : colorObj.hex;
+          const idAttr = `${isTarget ? 't_' : 'r_'}${seg.id}`;
+
+          if (seg.type === 'circle') {
+            svg += `<circle id="${idAttr}" cx="${seg.cx}" cy="${seg.cy}" r="${seg.r}" fill="${fill}" stroke="#222222" stroke-width="2.5" data-target="${seg.targetColor}" data-id="${seg.id}" />`;
+          } else if (seg.type === 'rect') {
+            svg += `<rect id="${idAttr}" x="${seg.x}" y="${seg.y}" width="${seg.width}" height="${seg.height}" fill="${fill}" stroke="#222222" stroke-width="2.5" data-target="${seg.targetColor}" data-id="${seg.id}" />`;
+          } else {
+            svg += `<path id="${idAttr}" d="${seg.path}" fill="${fill}" stroke="#222222" stroke-width="2.5" data-target="${seg.targetColor}" data-id="${seg.id}" />`;
+          }
+        });
+        svg += `</svg>`;
+        return svg;
+      };
+
+      document.getElementById('referenceContainer').innerHTML = createSVG(false);
+      document.getElementById('targetContainer').innerHTML = createSVG(true);
+
+      document.querySelectorAll('#targetContainer path, #targetContainer circle, #targetContainer rect').forEach(element => {
+        element.addEventListener('click', onSegmentClick);
+      });
+    }
+
+    function onSegmentClick(e) {
+      const el = e.target;
+      const targetColor = el.getAttribute('data-target');
+      const id = el.getAttribute('data-id');
+
+      if (!selectedColor) return;
+
+      if (selectedColor === targetColor) {
+        const colorObj = YOUR_COLORS.find(c => c.name === selectedColor);
+        el.setAttribute('fill', colorObj.hex);
+        paintedSegments[id] = true;
+        checkWin();
+      } else {
+        el.classList.add('shake');
+        setTimeout(() => el.classList.remove('shake'), 300);
+      }
+    }
+
+    function checkWin() {
+      const level = LEVELS[currentLevelIndex];
+      if (Object.keys(paintedSegments).length === level.segments.length) {
+        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+        setTimeout(() => {
+          currentLevelIndex = (currentLevelIndex + 1) % LEVELS.length;
+          loadLevel(currentLevelIndex);
+        }, 1800);
+      }
+    }
+
+    initPalette();
+    loadLevel(0);
+  </script>
+</body>
+</html>
