@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fill & Discover: Sand & Water</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #31103f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        /* Sunset Beach Background Layer (z-index 1) */
+        #bg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Animated Cloud Drift */
+        .cloud-drift-1 {
+            animation: floatCloud1 40s linear infinite;
+        }
+        .cloud-drift-2 {
+            animation: floatCloud2 52s linear infinite;
+        }
+
+        @keyframes floatCloud1 {
+            0% { transform: translateX(-150px); }
+            100% { transform: translateX(1350px); }
+        }
+
+        @keyframes floatCloud2 {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(1400px); }
+        }
+
+        /* Physics Canvas (z-index 2) */
+        #sim-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        /* Secrets Layer (z-index 4) */
+        #secrets-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .secret-item {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            transform: translate(-50%, -50%) scale(0.3);
+            opacity: 0;
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.6s ease;
+            filter: drop-shadow(0 0 0px transparent);
+        }
+
+        .secret-item.revealed {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+            filter: drop-shadow(0 0 30px #f43f5e);
+        }
+
+        /* PECS Prompt (z-index 8) */
+        #touch-prompt {
+            position: absolute;
+            top: 50%;
+            left: 55%;
+            transform: translate(-50%, -50%);
+            z-index: 8;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.8s ease;
+        }
+
+        #touch-prompt.hidden { opacity: 0; }
+
+        .pecs-prompt-icon {
+            width: 160px;
+            height: 160px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.9));
+            animation: pulse 1.8s infinite ease-in-out;
+        }
+
+        /* Sidebar UI (z-index 10) */
+        #sidebar {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            z-index: 10;
+            background: rgba(24, 9, 38, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 44px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .menu-btn {
+            width: 160px;
+            height: 160px;
+            border-radius: 36px;
+            border: 5px solid #4a1d63;
+            background-color: #260d36;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .menu-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .menu-btn.active {
+            border-color: #f43f5e;
+            background-color: #1a0726;
+            box-shadow: 0 0 30px rgba(244, 63, 94, 0.7);
+            transform: scale(1.05);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sunset Sky Background Vector Layer -->
+<div id="bg-layer">
+    <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Sunset Sky Gradient (Purple -> Pink -> Tangerine -> Soft Amber) -->
+            <linearGradient id="sunsetSky" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#2e1045"/>
+                <stop offset="30%" stop-color="#581c87"/>
+                <stop offset="55%" stop-color="#9d174d"/>
+                <stop offset="78%" stop-color="#f43f5e"/>
+                <stop offset="92%" stop-color="#fb923c"/>
+                <stop offset="100%" stop-color="#fdba74"/>
+            </linearGradient>
+
+            <!-- Sunset Glow -->
+            <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+                <stop offset="25%" stop-color="#fef08a" stop-opacity="0.9"/>
+                <stop offset="60%" stop-color="#fb923c" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#f43f5e" stop-opacity="0"/>
+            </radialGradient>
+
+            <!-- Mountain Silhouette Gradients -->
+            <linearGradient id="mountGradFar" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#4c1d95"/>
+                <stop offset="100%" stop-color="#1e1b4b"/>
+            </linearGradient>
+            <linearGradient id="mountGradNear" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#31103f"/>
+                <stop offset="100%" stop-color="#0f0518"/>
+            </linearGradient>
+        </defs>
+
+        <!-- Sky -->
+        <rect width="1200" height="800" fill="url(#sunsetSky)"/>
+
+        <!-- Setting Sun & Warm Glow -->
+        <circle cx="600" cy="520" r="220" fill="url(#sunGlow)"/>
+        <circle cx="600" cy="520" r="55" fill="#fff7ed"/>
+
+        <!-- Soft Sunset Clouds -->
+        <g class="cloud-drift-1" opacity="0.45">
+            <path d="M 50 220 Q 75 185 120 190 Q 160 175 200 205 Q 230 205 245 230 Q 265 250 235 275 Q 40 280 50 220 Z" fill="#fbcfe8"/>
+        </g>
+        <g class="cloud-drift-2" opacity="0.4">
+            <path d="M 600 180 Q 625 150 670 155 Q 705 140 740 170 Q 770 170 785 195 Q 805 215 775 240 Q 590 245 600 180 Z" fill="#fed7aa"/>
+        </g>
+
+        <!-- Mountain Silhouettes -->
+        <path d="M -50 620 L 140 450 L 320 550 L 550 410 L 780 560 L 1020 430 L 1250 540 L 1250 800 L -50 800 Z" fill="url(#mountGradFar)" opacity="0.85"/>
+        <path d="M -50 660 L 220 510 L 450 600 L 700 480 L 950 610 L 1250 500 L 1250 800 L -50 800 Z" fill="url(#mountGradNear)" opacity="0.95"/>
+
+        <!-- Beach Umbrellas with Solid White Grounded Poles -->
+        <!-- Umbrella 1 (Left Side) -->
+        <g transform="translate(240, 520)">
+            <!-- Straight White Pole Grounded Deep into Shoreline -->
+            <line x1="0" y1="0" x2="0" y2="160" stroke="#ffffff" stroke-width="8" stroke-linecap="square"/>
+            <path d="M -70 0 Q 0 -55 70 0 Z" fill="#881337"/>
+            <path d="M -42 -13 Q 0 -55 42 -13 L 24 0 Q 0 -45 -24 0 Z" fill="#f43f5e"/>
+            <path d="M -14 -22 Q 0 -55 14 -22 L 0 0 Z" fill="#fb923c"/>
+        </g>
+
+        <!-- Umbrella 2 (Right Side) -->
+        <g transform="translate(940, 540) scale(0.85)">
+            <!-- Straight White Pole Grounded Deep into Shoreline -->
+            <line x1="0" y1="0" x2="0" y2="175" stroke="#ffffff" stroke-width="8" stroke-linecap="square"/>
+            <path d="M -70 0 Q 0 -55 70 0 Z" fill="#581c87"/>
+            <path d="M -42 -13 Q 0 -55 42 -13 L 24 0 Q 0 -45 -24 0 Z" fill="#a855f7"/>
+            <path d="M -14 -22 Q 0 -55 14 -22 L 0 0 Z" fill="#f43f5e"/>
+        </g>
+    </svg>
+</div>
+
+<!-- Simulation Canvas -->
+<canvas id="sim-canvas"></canvas>
+<div id="secrets-layer"></div>
+
+<div id="sidebar">
+    <button class="menu-btn active" onclick="setMode('sand', this)" title="Sand">
+        <img src="sand.png" alt="Sand">
+    </button>
+    <button class="menu-btn" onclick="setMode('water', this)" title="Water">
+        <img src="water.png" alt="Water">
+    </button>
+</div>
+
+<div id="touch-prompt">
+    <img src="touch.png" alt="Touch Prompt" class="pecs-prompt-icon" 
+         onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23ffffff\'><path d=\'M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74 0-2.48-2.02-4.5-4.5-4.5S7 5.02 7 7.5c0 1.56.79 2.93 2 3.74zM11.5 1C7.91 1 5 3.91 5 7.5c0 2.22.99 4.21 2.54 5.54L6 22h11l-1.54-8.96C17.01 11.71 18 9.72 18 7.5 18 3.91 15.09 1 11.5 1z\'/></svg>';">
+</div>
+
+<script>
+    const canvas = document.getElementById('sim-canvas');
+    const ctx = canvas.getContext('2d');
+    const secretsLayer = document.getElementById('secrets-layer');
+    const promptElem = document.getElementById('touch-prompt');
+
+    const SCALE = 6;
+    let width, height, cols, rows;
+    let grid, nextGrid;
+
+    const EMPTY = 0;
+    const SAND = 1;
+    const WATER = 2;
+
+    let activeMode = 'sand';
+    let isPressed = false;
+    let pointerX = 0, pointerY = 0;
+    let audioCtx = null;
+    let idleTimer = null;
+
+    const SECRET_ITEMS = [
+        { id: 'sandcastle', src: 'sandcastle.png', type: 'sand', threshold: 0.15 },
+        { id: 'seashell', src: 'seashell.png', type: 'sand', threshold: 0.35 },
+        { id: 'treasurechest', src: 'treasure_chest.png', type: 'sand', threshold: 0.60 },
+        { id: 'fish', src: 'fish.png', type: 'water', threshold: 0.15 },
+        { id: 'diver', src: 'deep_sea_diver.png', type: 'water', threshold: 0.35 },
+        { id: 'mermaid', src: 'mermaid.png', type: 'water', threshold: 0.60 }
+    ];
+
+    let secrets = [];
+
+    function setupGrid() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        cols = Math.floor(width / SCALE);
+        rows = Math.floor(height / SCALE);
+
+        grid = new Uint8Array(cols * rows);
+        nextGrid = new Uint8Array(cols * rows);
+
+        initSecretsUI();
+    }
+
+    function initSecretsUI() {
+        secretsLayer.innerHTML = '';
+        secrets = [];
+
+        SECRET_ITEMS.forEach(item => {
+            const img = document.createElement('img');
+            img.src = item.src;
+            img.className = 'secret-item';
+            
+            secretsLayer.appendChild(img);
+
+            secrets.push({
+                ...item,
+                elem: img,
+                revealed: false
+            });
+        });
+    }
+
+    window.addEventListener('resize', setupGrid);
+    setupGrid();
+
+    function setMode(mode, btnElem) {
+        activeMode = mode;
+        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+        if (btnElem) btnElem.classList.add('active');
+    }
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'water') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(320 + Math.random() * 100, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+            gain.gain.setValueAtTime(0.03, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        } else if (type === 'sand') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(120 + Math.random() * 40, now);
+            gain.gain.setValueAtTime(0.02, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        } else if (type === 'reveal') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.4);
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        }
+        osc.start(now);
+        osc.stop(now + 0.4);
+    }
+
+    function getIdx(c, r) { return r * cols + c; }
+
+    function emitParticles() {
+        if (!isPressed) return;
+
+        initAudio();
+        promptElem.classList.add('hidden');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => promptElem.classList.remove('hidden'), 5000);
+
+        const centerC = Math.floor(pointerX / SCALE);
+        const centerR = Math.floor(pointerY / SCALE);
+        
+        const radius = 4;
+        let soundTriggered = false;
+
+        for (let dr = -radius; dr <= radius; dr++) {
+            for (let dc = -radius; dc <= radius; dc++) {
+                if (dc * dc + dr * dr <= radius * radius) {
+                    const c = centerC + dc;
+                    const r = centerR + dr;
+
+                    if (c >= 0 && c < cols && r >= 0 && r < rows) {
+                        const idx = getIdx(c, r);
+
+                        if (activeMode === 'sand') {
+                            if (grid[idx] !== SAND) {
+                                grid[idx] = SAND;
+                                soundTriggered = true;
+                            }
+                        } else if (activeMode === 'water') {
+                            if (grid[idx] !== WATER) {
+                                grid[idx] = WATER;
+                                soundTriggered = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (soundTriggered && Math.random() < 0.3) playSound(activeMode);
+    }
+
+    function updatePhysics() {
+        nextGrid.set(grid);
+
+        for (let r = rows - 1; r >= 0; r--) {
+            for (let c = 0; c < cols; c++) {
+                const i = getIdx(c, r);
+                const type = grid[i];
+
+                if (type === EMPTY) continue;
+
+                const below = getIdx(c, r + 1);
+                const belowL = getIdx(c - 1, r + 1);
+                const belowR = getIdx(c + 1, r + 1);
+                const left = getIdx(c - 1, r);
+                const right = getIdx(c + 1, r);
+
+                const hasBottom = r < rows - 1;
+                const dir = Math.random() < 0.5 ? 1 : -1;
+
+                if (type === SAND) {
+                    // Sand Absorption: When Sand mode is active, sand gradually absorbs adjacent water
+                    if (activeMode === 'sand' && Math.random() < 0.03) {
+                        const waterNeighbors = [];
+                        if (hasBottom && nextGrid[below] === WATER) waterNeighbors.push(below);
+                        if (hasBottom && c > 0 && nextGrid[belowL] === WATER) waterNeighbors.push(belowL);
+                        if (hasBottom && c < cols - 1 && nextGrid[belowR] === WATER) waterNeighbors.push(belowR);
+                        if (c > 0 && nextGrid[left] === WATER) waterNeighbors.push(left);
+                        if (c < cols - 1 && nextGrid[right] === WATER) waterNeighbors.push(right);
+
+                        if (waterNeighbors.length > 0) {
+                            const targetIdx = waterNeighbors[Math.floor(Math.random() * waterNeighbors.length)];
+                            nextGrid[targetIdx] = SAND;
+                        }
+                    }
+
+                    // Sand falling movement
+                    if (hasBottom && nextGrid[below] === EMPTY) {
+                        nextGrid[below] = SAND;
+                        nextGrid[i] = EMPTY;
+                    } 
+                    else if (hasBottom && c > 0 && nextGrid[dir === 1 ? belowL : belowR] === EMPTY) {
+                        const target = dir === 1 ? belowL : belowR;
+                        nextGrid[target] = SAND;
+                        nextGrid[i] = EMPTY;
+                    } 
+                    else if (hasBottom && c < cols - 1 && nextGrid[dir === 1 ? belowR : belowL] === EMPTY) {
+                        const target = dir === 1 ? belowR : belowL;
+                        nextGrid[target] = SAND;
+                        nextGrid[i] = EMPTY;
+                    }
+                } 
+                else if (type === WATER) {
+                    // Water Erosion: When Water mode is active, water gradually erodes adjacent sand
+                    if (activeMode === 'water' && Math.random() < 0.03) {
+                        const sandNeighbors = [];
+                        if (hasBottom && nextGrid[below] === SAND) sandNeighbors.push(below);
+                        if (hasBottom && c > 0 && nextGrid[belowL] === SAND) sandNeighbors.push(belowL);
+                        if (hasBottom && c < cols - 1 && nextGrid[belowR] === SAND) sandNeighbors.push(belowR);
+                        if (c > 0 && nextGrid[left] === SAND) sandNeighbors.push(left);
+                        if (c < cols - 1 && nextGrid[right] === SAND) sandNeighbors.push(right);
+
+                        if (sandNeighbors.length > 0) {
+                            const targetIdx = sandNeighbors[Math.floor(Math.random() * sandNeighbors.length)];
+                            nextGrid[targetIdx] = WATER;
+                        }
+                    }
+
+                    // Water falling and flowing movement
+                    if (hasBottom && nextGrid[below] === EMPTY) {
+                        nextGrid[below] = WATER;
+                        nextGrid[i] = EMPTY;
+                    } 
+                    else if (hasBottom && c > 0 && nextGrid[dir === 1 ? belowL : belowR] === EMPTY) {
+                        const target = dir === 1 ? belowL : belowR;
+                        nextGrid[target] = WATER;
+                        nextGrid[i] = EMPTY;
+                    } 
+                    else if (hasBottom && c < cols - 1 && nextGrid[dir === 1 ? belowR : belowL] === EMPTY) {
+                        const target = dir === 1 ? belowR : belowL;
+                        nextGrid[target] = WATER;
+                        nextGrid[i] = EMPTY;
+                    } 
+                    else if (c > 0 && nextGrid[dir === 1 ? left : right] === EMPTY) {
+                        const target = dir === 1 ? left : right;
+                        nextGrid[target] = WATER;
+                        nextGrid[i] = EMPTY;
+                    } 
+                    else if (c < cols - 1 && nextGrid[dir === 1 ? right : left] === EMPTY) {
+                        const target = dir === 1 ? right : left;
+                        nextGrid[target] = WATER;
+                        nextGrid[i] = EMPTY;
+                    }
+                }
+            }
+        }
+        grid.set(nextGrid);
+    }
+
+    function findSpawnPoint(elementType) {
+        const targetType = elementType === 'sand' ? SAND : WATER;
+        const validCells = [];
+
+        for (let r = 20; r < rows - 20; r += 2) {
+            for (let c = 40; c < cols - 20; c += 2) {
+                if (grid[getIdx(c, r)] === targetType) {
+                    validCells.push({ x: c * SCALE, y: r * SCALE });
+                }
+            }
+        }
+
+        if (validCells.length > 0) {
+            return validCells[Math.floor(Math.random() * validCells.length)];
+        }
+
+        return { x: width / 2, y: height / 2 };
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, width, height);
+
+        let waterCount = 0;
+        let sandCount = 0;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const type = grid[getIdx(c, r)];
+                if (type === EMPTY) continue;
+
+                if (type === SAND) {
+                    sandCount++;
+                    ctx.fillStyle = '#facc15';
+                } else if (type === WATER) {
+                    waterCount++;
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
+                }
+                ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE);
+            }
+        }
+
+        const totalCells = cols * rows;
+        const waterRatio = waterCount / totalCells;
+        const sandRatio = sandCount / totalCells;
+
+        secrets.forEach(s => {
+            const currentRatio = s.type === 'water' ? waterRatio : sandRatio;
+            const meetsThreshold = currentRatio >= s.threshold;
+
+            if (meetsThreshold && !s.revealed) {
+                const spawnPos = findSpawnPoint(s.type);
+                s.elem.style.left = `${spawnPos.x}px`;
+                s.elem.style.top = `${spawnPos.y}px`;
+
+                s.revealed = true;
+                s.elem.classList.add('revealed');
+                playSound('reveal');
+            } else if (!meetsThreshold && s.revealed) {
+                s.revealed = false;
+                s.elem.classList.remove('revealed');
+            }
+        });
+    }
+
+    function loop() {
+        emitParticles();
+        updatePhysics();
+        render();
+        requestAnimationFrame(loop);
+    }
+
+    function setPointer(e) {
+        pointerX = e.clientX;
+        pointerY = e.clientY;
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+        if (e.clientX < 220 && e.clientY > window.innerHeight / 2 - 200 && e.clientY < window.innerHeight / 2 + 200) return;
+        isPressed = true;
+        setPointer(e);
+    });
+
+    window.addEventListener('pointermove', (e) => { setPointer(e); });
+    window.addEventListener('pointerup', () => isPressed = false);
+    window.addEventListener('pointercancel', () => isPressed = false);
+
+    loop();
+</script>
+
+</body>
+</html>
