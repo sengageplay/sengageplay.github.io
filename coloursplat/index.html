@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Splat the Colors! - Sengage</title>
     <style>
         * {
@@ -18,48 +18,55 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: #f8fafc;
+            background-color: #ffffff; /* Pure white background to blend PECS symbols seamlessly */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Top Header & Audio Control Bar */
+        /* Responsive Top Header Bar */
         .header {
             position: absolute;
-            top: 15px;
+            top: 12px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 25px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            padding: 8px 18px;
             border-radius: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             text-align: center;
             display: flex;
             align-items: center;
-            gap: 15px;
+            justify-content: center;
+            gap: 12px;
+            width: max-content;
+            max-width: 92vw;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: clamp(0.95rem, 3.5vw, 1.4rem);
             color: #2c3e50;
+            white-space: nowrap;
         }
 
         .sound-btn {
             background-color: #3b82f6;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: clamp(0.75rem, 2.8vw, 0.9rem);
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-            transition: background 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .sound-btn:hover {
-            background-color: #2563eb;
+        .sound-btn:active {
+            transform: scale(0.95);
         }
 
         /* Game Arena */
@@ -78,7 +85,7 @@
             align-items: center;
             justify-content: center;
             transition: transform 0.1s ease-out;
-            padding: 5px;
+            padding: 4px;
             mix-blend-mode: multiply;
         }
 
@@ -98,14 +105,14 @@
 
         @keyframes splatPop {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.9; }
-            100% { transform: scale(1.6); opacity: 0; }
+            50% { transform: scale(1.35); opacity: 0.9; }
+            100% { transform: scale(1.55); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <div class="header" id="ui-header">
         <h1>🎨 Tap a Color to Splat It!</h1>
         <button class="sound-btn" id="audio-toggle">🔊 Turn On Sound</button>
     </div>
@@ -114,9 +121,9 @@
 
     <script>
         const COLOR_LIST = ["red", "blue", "green", "orange", "yellow", "purple", "pink"];
-        const MAX_BALLS = 10;
         const activeTargets = [];
         const stage = document.getElementById('game-stage');
+        const headerElem = document.getElementById('ui-header');
 
         // Web Audio API Synthesizer
         let audioCtx = null;
@@ -178,36 +185,54 @@
             if (ambientInterval) clearInterval(ambientInterval);
         }
 
+        // Screen configuration parameters calculated on the fly
+        function getScreenConfig() {
+            const minDim = Math.min(window.innerWidth, window.innerHeight);
+            const isMobile = window.innerWidth < 650 || window.innerHeight < 650;
+
+            return {
+                maxBalls: isMobile ? 5 : 10,
+                sizeSmall: Math.max(45, Math.floor(minDim * 0.12)),
+                sizeMed: Math.max(70, Math.floor(minDim * 0.20)),
+                sizeLarge: Math.max(100, Math.floor(minDim * 0.28))
+            };
+        }
+
+        function getHeaderBottomBoundary() {
+            if (!headerElem) return 70;
+            const rect = headerElem.getBoundingClientRect();
+            return rect.bottom + 8;
+        }
+
         class ColorBall {
             constructor() {
                 this.color = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
                 this.isSplatted = false;
                 
-                // 1. HUMUNGOUS SIZES (Ranges from small 60px to massive 320px!)
+                const config = getScreenConfig();
+                
+                // Responsive size tier calculation
                 const sizeRoll = Math.random();
-                if (sizeRoll < 0.2) {
-                    this.size = Math.floor(Math.random() * 40) + 60; // Small (60px - 100px)
-                } else if (sizeRoll < 0.75) {
-                    this.size = Math.floor(Math.random() * 80) + 120; // Medium-Large (120px - 200px)
+                if (sizeRoll < 0.25) {
+                    this.size = config.sizeSmall;
+                } else if (sizeRoll < 0.80) {
+                    this.size = config.sizeMed;
                 } else {
-                    this.size = Math.floor(Math.random() * 100) + 220; // HUMUNGOUS (220px - 320px!)
+                    this.size = config.sizeLarge;
                 }
                 
-                // Spawn within safe boundaries
-                this.x = Math.random() * (window.innerWidth - this.size - 20) + 10;
-                this.y = Math.random() * (window.innerHeight - this.size - 90) + 80;
+                const topBoundary = getHeaderBottomBoundary();
+                const maxX = Math.max(10, window.innerWidth - this.size - 10);
+                const maxY = Math.max(topBoundary + 10, window.innerHeight - this.size - 10);
+
+                // Spawn within safe visible boundaries
+                this.x = Math.random() * (maxX - 10) + 10;
+                this.y = Math.random() * (maxY - topBoundary) + topBoundary;
                 
-                // 2. EXTREME SPEEDS (Normal drift vs. RARE REALLY FAST SPEED)
-                const isSuperFast = Math.random() < 0.15; // 15% chance to spawn a hyper-fast ball
-                let speedMultiplier;
+                // Speed calculations
+                const isSuperFast = Math.random() < 0.15;
+                let speedMultiplier = isSuperFast ? (Math.random() * 4 + 7) : (Math.random() * 2 + 0.6);
 
-                if (isSuperFast) {
-                    speedMultiplier = Math.random() * 6 + 10; // Extremely Fast!
-                } else {
-                    speedMultiplier = Math.random() * 2 + 0.5; // Normal gentle drift
-                }
-
-                // Random angle direction
                 const angle = Math.random() * Math.PI * 2;
                 this.vx = Math.cos(angle) * speedMultiplier;
                 this.vy = Math.sin(angle) * speedMultiplier;
@@ -237,9 +262,26 @@
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Clean edge bouncing based on individual size
-                if (this.x <= 5 || this.x >= window.innerWidth - this.size - 5) this.vx *= -1;
-                if (this.y <= 80 || this.y >= window.innerHeight - this.size - 5) this.vy *= -1;
+                const topLimit = getHeaderBottomBoundary();
+                const rightLimit = window.innerWidth - this.size - 5;
+                const bottomLimit = window.innerHeight - this.size - 5;
+
+                // Edge bouncing logic
+                if (this.x <= 5) {
+                    this.x = 5;
+                    this.vx *= -1;
+                } else if (this.x >= rightLimit) {
+                    this.x = Math.max(5, rightLimit);
+                    this.vx *= -1;
+                }
+
+                if (this.y <= topLimit) {
+                    this.y = topLimit;
+                    this.vy *= -1;
+                } else if (this.y >= bottomLimit) {
+                    this.y = Math.max(topLimit, bottomLimit);
+                    this.vy *= -1;
+                }
 
                 this.updatePosition();
             }
@@ -269,7 +311,8 @@
         }
 
         function maintainTargetCount() {
-            if (activeTargets.length < MAX_BALLS) {
+            const config = getScreenConfig();
+            if (activeTargets.length < config.maxBalls) {
                 activeTargets.push(new ColorBall());
             }
         }
@@ -279,7 +322,7 @@
             requestAnimationFrame(animate);
         }
 
-        setInterval(maintainTargetCount, 500);
+        setInterval(maintainTargetCount, 400);
         animate();
     </script>
 </body>
