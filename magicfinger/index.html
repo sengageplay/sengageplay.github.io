@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cause & Effect: Sensory Elements</title>
+    <title>Magic Finger - Cause & Effect</title>
     <style>
         * {
             box-sizing: border-box;
@@ -31,35 +31,63 @@
             cursor: pointer;
         }
 
-        /* --- LEFT SIDEBAR MENU --- */
+        /* --- RESPONSIVE SIDEBAR MENU --- */
         #sidebar {
             position: absolute;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
             z-index: 20;
             background: rgba(20, 20, 20, 0.85);
-            padding: 14px;
-            border-radius: 30px;
             border: 2px solid #333;
+            display: flex;
+            gap: 12px;
+            transition: all 0.3s ease;
         }
 
-        /* 150px PECS Symbol Buttons */
+        /* DESKTOP & LANDSCAPE (Left Side Vertical) */
+        @media (min-width: 601px) or (orientation: landscape) {
+            #sidebar {
+                top: 50%;
+                left: 15px;
+                transform: translateY(-50%);
+                flex-direction: column;
+                padding: 12px;
+                border-radius: 24px;
+            }
+
+            .menu-btn {
+                width: min(110px, 12vh);
+                height: min(110px, 12vh);
+            }
+        }
+
+        /* MOBILE PORTRAIT (Bottom Horizontal Bar) */
+        @media (max-width: 600px) and (orientation: portrait) {
+            #sidebar {
+                bottom: 15px;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                padding: 10px 14px;
+                border-radius: 24px;
+            }
+
+            .menu-btn {
+                width: clamp(55px, 18vw, 75px);
+                height: clamp(55px, 18vw, 75px);
+            }
+        }
+
+        /* --- MENU BUTTONS --- */
         .menu-btn {
-            width: 150px;
-            height: 150px;
-            border-radius: 32px;
-            border: 4px solid #444;
+            border-radius: 20px;
+            border: 3px solid #444;
             background-color: #1a1a1a;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 4px;
-            transition: all 0.2s ease;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+            flex-shrink: 0;
         }
 
         .menu-btn img {
@@ -72,8 +100,8 @@
         .menu-btn.active {
             border-color: #77DDFF;
             background-color: #333333;
-            box-shadow: 0 0 20px rgba(119, 221, 255, 0.7);
-            transform: scale(1.08);
+            box-shadow: 0 0 15px rgba(119, 221, 255, 0.7);
+            transform: scale(1.05);
         }
 
         .menu-btn:active {
@@ -83,8 +111,8 @@
         /* Gentle "Touch" PECS Prompt Overlay */
         #touch-prompt {
             position: absolute;
-            top: 50%;
-            left: 55%;
+            top: 45%;
+            left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
             display: flex;
@@ -101,8 +129,8 @@
         }
 
         .pecs-prompt-icon {
-            width: 140px;
-            height: 140px;
+            width: clamp(80px, 20vw, 130px);
+            height: clamp(80px, 20vw, 130px);
             object-fit: contain;
             filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
             animation: pulse 1.8s infinite ease-in-out;
@@ -119,7 +147,7 @@
 
 <canvas id="game-canvas"></canvas>
 
-<!-- Left PECS Selection Sidebar -->
+<!-- PECS Selection Sidebar (Responsive) -->
 <div id="sidebar">
     <button class="menu-btn active" onclick="setMode('bubbles', this)" title="Bubbles">
         <img src="bubbles.png" alt="Bubbles">
@@ -162,6 +190,7 @@
         canvas.height = window.innerHeight;
     }
     window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => setTimeout(resize, 100));
     resize();
 
     function setMode(mode, btnElem) {
@@ -242,15 +271,18 @@
             promptElem.classList.remove('hidden');
         }, 5000);
 
+        // Adjust particle scaling dynamically for mobile screens
+        const mobileScale = window.innerWidth < 600 ? 0.75 : 1.0;
+
         if (activeMode === 'bubbles') {
             const color = BUBBLE_PALETTE[Math.floor(Math.random() * BUBBLE_PALETTE.length)];
-            const size = Math.random() * 25 + 20;
+            const size = (Math.random() * 25 + 20) * mobileScale;
             particles.push({
                 type: 'bubble',
                 x: x + (Math.random() * 20 - 10),
                 y: y + (Math.random() * 20 - 10),
                 radius: size,
-                maxRadius: size + Math.random() * 40 + 30,
+                maxRadius: (size + Math.random() * 40 + 30) * mobileScale,
                 color: color,
                 vx: (Math.random() - 0.5) * 1.2,
                 vy: -(Math.random() * 1.5 + 0.8),
@@ -258,30 +290,28 @@
                 shimmer: Math.random() * Math.PI
             });
         } else if (activeMode === 'water') {
-            // Smooth Liquid Stream: Rounded liquid drops that spout up, wave organically, and splash down
-            for (let i = 0; i < 14; i++) {
+            for (let i = 0; i < 10; i++) {
                 const isMainDrop = Math.random() > 0.35;
                 particles.push({
                     type: 'water',
                     x: x + (Math.random() * 24 - 12),
                     y: y + (Math.random() * 10 - 5),
-                    radius: isMainDrop ? (Math.random() * 7 + 6) : (Math.random() * 3.5 + 2),
+                    radius: (isMainDrop ? (Math.random() * 7 + 6) : (Math.random() * 3.5 + 2)) * mobileScale,
                     color: WATER_PALETTE[Math.floor(Math.random() * WATER_PALETTE.length)],
                     vx: (Math.random() - 0.5) * 5,
-                    vy: -(Math.random() * 8 + 5), // Upward fountain spray
+                    vy: -(Math.random() * 8 + 5),
                     wobble: Math.random() * Math.PI * 2,
                     wobbleSpeed: Math.random() * 0.12 + 0.04,
                     alpha: 0.9
                 });
             }
         } else if (activeMode === 'sand') {
-            // Heavy Sand Stream
-            for (let i = 0; i < 18; i++) {
+            for (let i = 0; i < 12; i++) {
                 particles.push({
                     type: 'sand',
                     x: x + (Math.random() * 36 - 18),
                     y: y + (Math.random() * 12 - 6),
-                    radius: Math.random() * 3.5 + 2.5,
+                    radius: (Math.random() * 3.5 + 2.5) * mobileScale,
                     color: SAND_PALETTE[Math.floor(Math.random() * SAND_PALETTE.length)],
                     vx: (Math.random() - 0.5) * 3,
                     vy: Math.random() * 6 + 4,
@@ -289,12 +319,11 @@
                 });
             }
         } else if (activeMode === 'star') {
-            // Larger Cascading Stars
             particles.push({
                 type: 'star',
                 x: x + (Math.random() * 20 - 10),
                 y: y + (Math.random() * 20 - 10),
-                radius: Math.random() * 25 + 20,
+                radius: (Math.random() * 25 + 20) * mobileScale,
                 color: STAR_PALETTE[Math.floor(Math.random() * STAR_PALETTE.length)],
                 vx: (Math.random() - 0.5) * 2.5,
                 vy: (Math.random() - 0.5) * 2.5 - 0.5,
@@ -375,12 +404,11 @@
                 ctx.restore();
             } 
             else if (p.type === 'water') {
-                // Liquid physics: organic drag, gentle fluid wobble, smooth falling drops
                 p.x += p.vx + Math.sin(p.wobble) * 0.9;
                 p.wobble += p.wobbleSpeed;
-                p.vy += 0.38; // Fluid gravity
+                p.vy += 0.38;
                 p.y += p.vy;
-                p.vx *= 0.98; // Air resistance / liquid drag
+                p.vx *= 0.98;
                 p.alpha -= 0.01;
 
                 if (p.alpha <= 0 || p.y > canvas.height + 40) { particles.splice(i, 1); continue; }
@@ -388,13 +416,11 @@
                 ctx.save();
                 ctx.globalAlpha = Math.max(0, p.alpha);
 
-                // Smooth main liquid drop
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fillStyle = p.color;
                 ctx.fill();
 
-                // Soft glossy water highlight for tactile depth
                 ctx.beginPath();
                 ctx.arc(p.x - p.radius * 0.3, p.y - p.radius * 0.3, p.radius * 0.35, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
@@ -446,6 +472,13 @@
 
     /* --- CONTROLS --- */
     function handleStart(x, y) {
+        // Prevent drawing if touching the menu bar
+        const sidebar = document.getElementById('sidebar');
+        const rect = sidebar.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            return;
+        }
+
         isDragging = true;
         lastDragPos = { x, y };
         spawnObject(x, y);
