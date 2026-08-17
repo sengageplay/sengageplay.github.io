@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colour Time 2</title>
+  <style>
+    :root {
+      --bg-color: #f4f7f6;
+      --panel-bg: #ffffff;
+      --primary-color: #3f51b5;
+      --accent-color: #ff4081;
+      --text-color: #212121;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* --- HEADER --- */
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      background: var(--panel-bg);
+      padding: 12px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: var(--primary-color);
+    }
+
+    .scene-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: var(--accent-color);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+    }
+
+    /* --- MAIN LAYOUT --- */
+    .game-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    /* CANVAS / SVG STAGE */
+    .svg-stage {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      background: #ffffff;
+      border: 4px solid #333333;
+      border-radius: 20px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    .svg-stage svg {
+      width: 100%;
+      height: 100%;
+      max-height: 380px;
+    }
+
+    /* Interactive Color Regions */
+    .color-region {
+      fill: #ffffff;
+      stroke: #222222;
+      stroke-width: 3.5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      cursor: pointer;
+      transition: fill 0.25s ease, stroke-width 0.15s ease;
+    }
+
+    .color-region:hover {
+      stroke-width: 5;
+    }
+
+    /* --- PALETTE DOCK --- */
+    .palette-container {
+      width: 100%;
+      max-width: 700px;
+      background: var(--panel-bg);
+      border-radius: 20px;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .color-swatch {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .color-swatch.active {
+      transform: scale(1.2);
+      border-color: #222222;
+    }
+
+    /* Controls */
+    .nav-controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      font-size: 1.1rem;
+      padding: 12px 24px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background-color: #303f9f;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    /* MODAL */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 24px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-content h2 {
+      color: var(--primary-color);
+      font-size: 2rem;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Colour Time 2 🎨</h1>
+    <div class="scene-title" id="sceneTitle">1. Happy Dog</div>
+  </header>
+
+  <div class="game-container">
+    <!-- SVG Scene Display Area -->
+    <div class="svg-stage" id="svgStage"></div>
+
+    <!-- SEN Color Palette Swatches -->
+    <div class="palette-container" id="paletteContainer"></div>
+
+    <!-- Navigation -->
+    <div class="nav-controls">
+      <button class="btn" id="prevBtn">◀ Previous</button>
+      <button class="btn" id="resetBtn">🔄 Clear</button>
+      <button class="btn" id="nextBtn">Next Scene ▶</button>
+    </div>
+  </div>
+
+  <!-- Completion Celebration Modal -->
+  <div class="modal" id="winModal">
+    <div class="modal-content">
+      <h2>Wonderful Picture! 🌟</h2>
+      <p>You colored the whole picture so nicely!</p>
+      <button class="btn" id="modalNextBtn">Next Picture ➔</button>
+    </div>
+  </div>
+
+  <script>
+    // --- COLOR PALETTE (Identical SEN High-Contrast Palette) ---
+    const paletteColors = [
+      '#E53935', // Bright Red
+      '#FB8C00', // Vibrant Orange
+      '#FDD835', // Sunny Yellow
+      '#4CAF50', // Leaf Green
+      '#03A9F4', // Sky Blue
+      '#3F51B5', // Deep Blue
+      '#9C27B0', // Playful Purple
+      '#E91E63', // Bright Pink
+      '#795548', // Warm Brown
+      '#212121'  // Bold Charcoal
+    ];
+
+    let selectedColor = paletteColors[0];
+    let currentSceneIdx = 0;
+
+    // --- 5 VECTOR SVG SCENES ---
+    const scenes = [
+      {
+        name: "1. Happy Dog 🐶",
+        svg: `
+          <svg viewBox="0 0 400 300">
+            <!-- Background Sun & Grass -->
+            <circle class="color-region" cx="60" cy="60" r="35" />
+            <path class="color-region" d="M 0 240 Q 200 220 400 240 L 400 300 L 0 300 Z" />
+            <!-- Dog Body -->
+            <ellipse class="color-region" cx="200" cy="190" rx="70" ry="45" />
+            <!-- Tail -->
+            <path class="color-region" d="M 260 180 Q 310 150 290 120 Q 270 140 265 170 Z" />
+            <!-- Legs -->
+            <rect class="color-region" x="150" y="220" width="22" height="50" rx="10" />
+            <rect class="color-region" x="180" y="220" width="22" height="50" rx="10" />
+            <rect class="color-region" x="210" y="220" width="22" height="50" rx="10" />
+            <rect class="color-region" x="240" y="220" width="22" height="50" rx="10" />
+            <!-- Dog Head -->
+            <circle class="color-region" cx="130" cy="130" r="45" />
+            <!-- Left Ear -->
+            <path class="color-region" d="M 95 100 C 70 90 60 140 85 150 Z" />
+            <!-- Right Ear -->
+            <path class="color-region" d="M 165 100 C 190 90 200 140 175 150 Z" />
+            <!-- Snout / Muzzle -->
+            <ellipse class="color-region" cx="120" cy="145" rx="20" ry="14" />
+            <!-- Collar & Tag -->
+            <path class="color-region" d="M 100 165 Q 130 180 160 165 L 156 175 Q 130 190 104 175 Z" />
+            <circle class="color-region" cx="130" cy="188" r="8" />
+          </svg>
+        `
+      },
+      {
+        name: "2. Friendly Dragon 🐲",
+        svg: `
+          <svg viewBox="0 0 400 300">
+            <!-- Castle Tower Background -->
+            <rect class="color-region" x="30" y="120" width="80" height="150" />
+            <polygon class="color-region" points="20,120 70,60 120,120" />
+            <!-- Dragon Wings -->
+            <path class="color-region" d="M 230 130 Q 320 60 340 140 Q 280 140 230 160 Z" />
+            <!-- Dragon Tail -->
+            <path class="color-region" d="M 270 230 Q 350 250 360 200 Q 340 190 300 210 Z" />
+            <polygon class="color-region" points="360,200 380,190 370,215" />
+            <!-- Dragon Body -->
+            <ellipse class="color-region" cx="230" cy="190" rx="55" ry="50" />
+            <!-- Tummy Plate -->
+            <ellipse class="color-region" cx="215" cy="195" rx="30" ry="35" />
+            <!-- Feet -->
+            <rect class="color-region" x="190" y="235" width="25" height="35" rx="10" />
+            <rect class="color-region" x="235" y="235" width="25" height="35" rx="10" />
+            <!-- Dragon Head & Neck -->
+            <path class="color-region" d="M 210 150 C 190 120 170 120 170 90 C 170 60 220 60 220 90 C 220 120 230 140 230 150 Z" />
+            <!-- Snout -->
+            <ellipse class="color-region" cx="175" cy="85" rx="20" ry="15" />
+            <!-- Spikes on Back -->
+            <polygon class="color-region" points="215,50 225,35 230,55" />
+            <polygon class="color-region" points="230,110 248,100 240,125" />
+            <polygon class="color-region" points="260,150 280,145 270,165" />
+          </svg>
+        `
+      },
+      {
+        name: "3. Farm Tractor 🚜",
+        svg: `
+          <svg viewBox="0 0 400 300">
+            <!-- Road/Field -->
+            <rect class="color-region" x="0" y="230" width="400" height="70" />
+            <!-- Exhaust Pipe & Smoke -->
+            <rect class="color-region" x="110" y="70" width="12" height="40" />
+            <circle class="color-region" cx="116" cy="50" r="14" />
+            <!-- Engine Body / Hood -->
+            <rect class="color-region" x="80" y="110" width="120" height="70" rx="10" />
+            <!-- Front Grill Light -->
+            <circle class="color-region" cx="80" cy="135" r="12" />
+            <!-- Driver Cabin -->
+            <path class="color-region" d="M 190 110 L 210 60 L 300 60 L 300 180 L 190 180 Z" />
+            <!-- Cabin Window -->
+            <rect class="color-region" x="215" y="75" width="70" height="55" rx="5" />
+            <!-- Small Front Wheel Outer & Inner -->
+            <circle class="color-region" cx="120" cy="210" r="35" />
+            <circle class="color-region" cx="120" cy="210" r="16" />
+            <!-- Big Rear Wheel Outer & Inner -->
+            <circle class="color-region" cx="270" cy="190" r="55" />
+            <circle class="color-region" cx="270" cy="190" r="25" />
+          </svg>
+        `
+      },
+      {
+        name: "4. Woodland & Birds 🌳",
+        svg: `
+          <svg viewBox="0 0 400 300">
+            <!-- Hills -->
+            <path class="color-region" d="M 0 200 Q 150 160 300 210 Q 360 220 400 200 L 400 300 L 0 300 Z" />
+            <!-- Big Tree Trunk -->
+            <path class="color-region" d="M 80 140 L 70 260 L 120 260 L 110 140 Z" />
+            <!-- Big Tree Foliage -->
+            <circle class="color-region" cx="95" cy="110" r="55" />
+            <circle class="color-region" cx="60" cy="130" r="40" />
+            <circle class="color-region" cx="130" cy="130" r="40" />
+            <!-- Bird 1 (Left) -->
+            <ellipse class="color-region" cx="230" cy="100" rx="22" ry="14" />
+            <circle class="color-region" cx="215" cy="92" r="10" />
+            <polygon class="color-region" points="205,92 195,95 205,100" /> <!-- Beak -->
+            <polygon class="color-region" points="250,98 270,90 265,108" /> <!-- Tail -->
+            <!-- Bird 2 (Right) -->
+            <ellipse class="color-region" cx="320" cy="140" rx="20" ry="12" />
+            <circle class="color-region" cx="308" cy="132" r="9" />
+            <polygon class="color-region" points="299,132 290,135 299,140" />
+            <polygon class="color-region" points="338,138 355,132 350,148" />
+            <!-- Mushroom on ground -->
+            <path class="color-region" d="M 180 250 Q 200 220 220 250 Z" />
+            <rect class="color-region" x="193" y="250" width="14" height="20" rx="4" />
+          </svg>
+        `
+      },
+      {
+        name: "5. Ship on Water ⛵",
+        svg: `
+          <svg viewBox="0 0 400 300">
+            <!-- Sun & Clouds -->
+            <circle class="color-region" cx="320" cy="60" r="30" />
+            <ellipse class="color-region" cx="90" cy="60" rx="35" ry="18" />
+            <ellipse class="color-region" cx="120" cy="55" rx="25" ry="15" />
+            <!-- Ocean Waves Background -->
+            <path class="color-region" d="M 0 210 Q 50 190 100 210 Q 150 230 200 210 Q 250 190 300 210 Q 350 230 400 210 L 400 300 L 0 300 Z" />
+            <!-- Ship Hull -->
+            <path class="color-region" d="M 80 170 L 320 170 L 280 225 L 120 225 Z" />
+            <!-- Porthole Windows -->
+            <circle class="color-region" cx="150" cy="195" r="10" />
+            <circle class="color-region" cx="200" cy="195" r="10" />
+            <circle class="color-region" cx="250" cy="195" r="10" />
+            <!-- Main Mast -->
+            <rect class="color-region" x="193" y="50" width="10" height="120" />
+            <!-- Big Sail -->
+            <path class="color-region" d="M 210 60 L 290 115 L 210 155 Z" />
+            <!-- Front Flag -->
+            <polygon class="color-region" points="193,50 150,65 193,80" />
+          </svg>
+        `
+      }
+    ];
+
+    // --- DOM ELEMENTS ---
+    const svgStage = document.getElementById('svgStage');
+    const paletteContainer = document.getElementById('paletteContainer');
+    const sceneTitle = document.getElementById('sceneTitle');
+    const winModal = document.getElementById('winModal');
+
+    // Synthesized Audio for Tap & Fill Feedback
+    function playAudio(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'pop') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(300, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.08);
+        } else if (type === 'fanfare') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          osc.frequency.setValueAtTime(554, ctx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(659, ctx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.4);
+        }
+      } catch (e) {
+        // Audio fallback
+      }
+    }
+
+    // --- RENDER PALETTE ---
+    function initPalette() {
+      paletteContainer.innerHTML = '';
+      paletteColors.forEach((color, idx) => {
+        const swatch = document.createElement('div');
+        swatch.classList.add('color-swatch');
+        swatch.style.backgroundColor = color;
+        if (color === selectedColor) swatch.classList.add('active');
+
+        swatch.addEventListener('click', () => {
+          document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+          swatch.classList.add('active');
+          selectedColor = color;
+          playAudio('pop');
+        });
+
+        paletteContainer.appendChild(swatch);
+      });
+    }
+
+    // --- RENDER SCENE ---
+    function loadScene(idx) {
+      currentSceneIdx = idx;
+      const scene = scenes[idx];
+      sceneTitle.textContent = scene.name;
+      svgStage.innerHTML = scene.svg;
+
+      // Attach coloring events to regions
+      const regions = svgStage.querySelectorAll('.color-region');
+      regions.forEach(region => {
+        region.addEventListener('click', () => {
+          region.style.fill = selectedColor;
+          playAudio('pop');
+          checkCompletion();
+        });
+      });
+    }
+
+    // Check if picture is completely colored in
+    function checkCompletion() {
+      const regions = svgStage.querySelectorAll('.color-region');
+      let fullyColored = true;
+
+      regions.forEach(r => {
+        const fill = window.getComputedStyle(r).fill;
+        if (fill === 'rgb(255, 255, 255)' || fill === '#ffffff') {
+          fullyColored = false;
+        }
+      });
+
+      if (fullyColored) {
+        setTimeout(() => {
+          playAudio('fanfare');
+          winModal.style.display = 'flex';
+        }, 300);
+      }
+    }
+
+    // --- BUTTON CONTROLS ---
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      currentSceneIdx = (currentSceneIdx - 1 + scenes.length) % scenes.length;
+      loadScene(currentSceneIdx);
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      currentSceneIdx = (currentSceneIdx + 1) % scenes.length;
+      loadScene(currentSceneIdx);
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      loadScene(currentSceneIdx);
+    });
+
+    document.getElementById('modalNextBtn').addEventListener('click', () => {
+      winModal.style.display = 'none';
+      currentSceneIdx = (currentSceneIdx + 1) % scenes.length;
+      loadScene(currentSceneIdx);
+    });
+
+    // STARTUP
+    initPalette();
+    loadScene(0);
+  </script>
+</body>
+</html>
