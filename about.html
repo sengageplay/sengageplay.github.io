@@ -29,8 +29,10 @@
         nav {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            align-items: center;
+            gap: 25px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         nav a {
@@ -110,6 +112,34 @@
 
         .content-card p:last-child {
             margin-bottom: 0;
+        }
+
+        /* SUPPORT SECTION ENHANCEMENTS */
+        .support-card {
+            text-align: center;
+            border: 2px solid #FFDD00;
+            background-color: #18181c;
+        }
+
+        .btn-coffee-lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #FFDD00;
+            color: #000000;
+            font-size: 1.25rem;
+            font-weight: 700;
+            padding: 16px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            margin-top: 15px;
+            box-shadow: 0 6px 16px rgba(255, 221, 0, 0.25);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        .btn-coffee-lg:hover {
+            transform: scale(1.05);
+            background-color: #ffe533;
         }
 
         /* HIGHLIGHT BOX FOR THE PROMISE */
@@ -243,10 +273,13 @@
     <!-- HEADER & NAVIGATION -->
     <header style="padding: 25px 20px; background-color: #1a1a1e; border-bottom: 4px solid #4ade80; text-align: center;">
         
-        <!-- TOP MENU (FULL WIDTH TOP) -->
-        <nav style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; width: 100%;">
+        <!-- TOP MENU WITH SUPPORT LINK -->
+        <nav style="display: flex; justify-content: center; align-items: center; gap: 25px; margin-bottom: 20px; width: 100%; flex-wrap: wrap;">
             <a href="index.html" style="color: #a1a1aa; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Games</a>
             <a href="about.html" class="active" style="color: #4ade80; text-decoration: none; font-weight: 600; font-size: 1.1rem;">About Us</a>
+            <a href="https://buymeacoffee.com/donenowplay" target="_blank" rel="noopener noreferrer" style="background-color: #FFDD00; color: #000000; text-decoration: none; font-weight: 700; font-size: 0.95rem; padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.15s ease;">
+                ☕ Support Us
+            </a>
         </nav>
 
         <!-- CENTERED LOGO -->
@@ -267,18 +300,33 @@
         </div>
 
         <!-- WHY WE ARE HERE -->
-<div class="content-card">
-    <h2>Why We Built This Space</h2>
-    <p>
-        DoneNowPlay was created out of a simple belief: every child deserves access to high-quality visual learning tools—without families or schools having to spend a fortune to get them.
-    </p>
-    <p>
-        Raising and supporting children with Special Educational Needs (SEN) comes with enough costs already. We wanted to build a calm, safe corner of the web where young minds can practice real-world skills—like matching, categorization, sentence structure, emotional awareness, and motor skills—at zero cost and with zero friction.
-    </p>
-    <p style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #3f3f46; color: #a1a1aa; font-size: 0.95rem;">
-        <strong>Please note:</strong> As our site is in its infancy, some games may not play as smoothly on mobile devices just yet. We’re working hard behind the scenes to optimize every game for all screens, and we welcome any feedback or reported faults to help us improve!
-    </p>
-</div>
+        <div class="content-card">
+            <h2>Why We Built This Space</h2>
+            <p>
+                DoneNowPlay was created out of a simple belief: every child deserves access to high-quality visual learning tools—without families or schools having to spend a fortune to get them.
+            </p>
+            <p>
+                Raising and supporting children with Special Educational Needs (SEN) comes with enough costs already. We wanted to build a calm, safe corner of the web where young minds can practice real-world skills—like matching, categorization, sentence structure, emotional awareness, and motor skills—at zero cost and with zero friction.
+            </p>
+            <p style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #3f3f46; color: #a1a1aa; font-size: 0.95rem;">
+                <strong>Please note:</strong> As our site is in its infancy, some games may not play as smoothly on mobile devices just yet. We’re working hard behind the scenes to optimize every game for all screens, and we welcome any feedback or reported faults to help us improve!
+            </p>
+        </div>
+
+        <!-- SUPPORT OUR MISSION (MIDDLE SECTION) -->
+        <div class="content-card support-card">
+            <h2 style="color: #FFDD00;">Help Keep DoneNowPlay Growing</h2>
+            <p>
+                We are proud to keep our games 100% ad-free and freely available to classrooms and families worldwide. If our games have brought a smile or helpful learning moment to your child or students, consider buying us a coffee. 
+            </p>
+            <p>
+                Every small contribution directly covers our hosting costs, keeps the basic games free, and funds the development of brand-new accessible games for visual thinkers!
+            </p>
+            <a href="https://buymeacoffee.com/donenowplay" target="_blank" rel="noopener noreferrer" class="btn-coffee-lg">
+                ☕ Buy Us a Coffee to Support the Project
+            </a>
+        </div>
+
         <!-- OUR SYMBOLS & GAMES -->
         <div class="content-card">
             <h2>Our Own Symbol Library</h2>
