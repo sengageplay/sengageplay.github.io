@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cause & Effect: Kaleidoscope Symmetry Painter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #FFFFFF;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* --- CONTROLS OVERLAY --- */
+        #ui-bar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+            background: rgba(20, 20, 20, 0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 2px solid #333;
+        }
+
+        .ui-btn {
+            background-color: #222;
+            color: #FFF;
+            border: 2px solid #555;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ui-btn.active {
+            background-color: #77DDFF;
+            color: #000;
+            border-color: #77DDFF;
+        }
+
+        .ui-btn-clear {
+            background-color: #FF99C8;
+            color: #000;
+            border-color: #FF99C8;
+        }
+
+        .ui-btn-download {
+            background-color: #B5EAD7;
+            color: #000;
+            border-color: #B5EAD7;
+        }
+
+        .ui-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* PECS Idle Prompt Overlay */
+        #touch-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.8s ease;
+        }
+
+        #touch-prompt.hidden {
+            opacity: 0;
+        }
+
+        .pecs-prompt-icon {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+            animation: pulse 1.8s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<!-- Top Control Bar -->
+<div id="ui-bar">
+    <button class="ui-btn" onclick="setSymmetry(4, this)">4 Way</button>
+    <button class="ui-btn active" onclick="setSymmetry(8, this)">8 Way</button>
+    <button class="ui-btn" onclick="setSymmetry(12, this)">12 Way</button>
+    <button class="ui-btn ui-btn-download" onclick="downloadArtwork()">Save</button>
+    <button class="ui-btn ui-btn-clear" onclick="clearCanvas()">Clear</button>
+</div>
+
+<!-- PECS Prompt Image -->
+<div id="touch-prompt">
+    <img src="touch.png" alt="Touch PECS Prompt" class="pecs-prompt-icon">
+</div>
+
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const promptElem = document.getElementById('touch-prompt');
+
+    let audioCtx = null;
+    let idleTimer = null;
+    let isDrawing = false;
+    let lastPos = null;
+    let symmetrySlices = 8;
+    let hue = 0;
+
+    // Palette for audio tones
+    const audioNotes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        clearCanvas();
+    }
+    window.addEventListener('resize', resize);
+
+    /* --- AUDIO SYNTHESIS --- */
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSoftChime() {
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        const note = audioNotes[Math.floor(Math.random() * audioNotes.length)];
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(note, now);
+
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+        osc.start(now);
+        osc.stop(now + 0.6);
+    }
+
+    /* --- IDLE PROMPT --- */
+    function resetIdleTimer() {
+        promptElem.classList.add('hidden');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            promptElem.classList.remove('hidden');
+        }, 5000);
+    }
+
+    /* --- CANVAS OPERATIONS --- */
+    function clearCanvas() {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function setSymmetry(num, btnElem) {
+        symmetrySlices = num;
+        document.querySelectorAll('#ui-bar .ui-btn').forEach(b => {
+            if (!b.classList.contains('ui-btn-clear') && !b.classList.contains('ui-btn-download')) {
+                b.classList.remove('active');
+            }
+        });
+        if (btnElem) btnElem.classList.add('active');
+    }
+
+    /* --- DOWNLOAD FUNCTION --- */
+    function downloadArtwork() {
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        link.download = `kaleidoscope-${timestamp}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    /* --- RADIAL SYMMETRY DRAWING --- */
+    function drawSymmetricalLine(p1, p2) {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        const relX1 = p1.x - centerX;
+        const relY1 = p1.y - centerY;
+        const relX2 = p2.x - centerX;
+        const relY2 = p2.y - centerY;
+
+        const angleStep = (Math.PI * 2) / symmetrySlices;
+
+        // Auto color cycling
+        hue = (hue + 1.5) % 360;
+        const strokeColor = `hsl(${hue}, 85%, 70%)`;
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = strokeColor;
+        ctx.shadowBlur = 8;
+
+        for (let i = 0; i < symmetrySlices; i++) {
+            const angle = i * angleStep;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(angle);
+
+            // Draw primary line
+            ctx.beginPath();
+            ctx.moveTo(relX1, relY1);
+            ctx.lineTo(relX2, relY2);
+            ctx.stroke();
+
+            // Mirror reflection for rich kaleidoscope effect
+            ctx.beginPath();
+            ctx.moveTo(-relX1, relY1);
+            ctx.lineTo(-relX2, relY2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }
+
+    /* --- CONTROLS --- */
+    function handleStart(x, y) {
+        initAudio();
+        resetIdleTimer();
+        isDrawing = true;
+        lastPos = { x, y };
+        
+        if (Math.random() < 0.5) playSoftChime();
+    }
+
+    function handleMove(x, y) {
+        resetIdleTimer();
+        if (!isDrawing || !lastPos) return;
+
+        const currentPos = { x, y };
+        drawSymmetricalLine(lastPos, currentPos);
+        lastPos = currentPos;
+
+        if (Math.random() < 0.15) playSoftChime();
+    }
+
+    function handleEnd() {
+        isDrawing = false;
+        lastPos = null;
+    }
+
+    // Pointer Events
+    canvas.addEventListener('pointerdown', (e) => handleStart(e.clientX, e.clientY));
+    canvas.addEventListener('pointermove', (e) => handleMove(e.clientX, e.clientY));
+    window.addEventListener('pointerup', handleEnd);
+    window.addEventListener('pointercancel', handleEnd);
+
+    // Switch device support (Space / Enter draws automated central rosette)
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+            resetIdleTimer();
+            initAudio();
+            playSoftChime();
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = 100 + Math.random() * 80;
+            const pts = 8;
+            for (let i = 0; i < pts; i++) {
+                const a1 = (i / pts) * Math.PI * 2;
+                const a2 = ((i + 1) / pts) * Math.PI * 2;
+                drawSymmetricalLine(
+                    { x: cx + Math.cos(a1) * r, y: cy + Math.sin(a1) * r },
+                    { x: cx + Math.cos(a2) * r, y: cy + Math.sin(a2) * r }
+                );
+            }
+        }
+    });
+
+    resize();
+    resetIdleTimer();
+</script>
+
+</body>
+</html>
