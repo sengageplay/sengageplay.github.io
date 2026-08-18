@@ -15,12 +15,12 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 15px;
+      padding: 12px;
     }
     
     h1 { 
       color: #222; 
-      margin-bottom: 5px; 
+      margin-bottom: 4px; 
       font-size: clamp(1.4rem, 4vw, 2rem);
       text-align: center;
     }
@@ -28,59 +28,61 @@
     .level-title { 
       font-size: clamp(1rem, 2.5vw, 1.3rem); 
       color: #555; 
-      margin-bottom: 15px; 
+      margin-bottom: 12px; 
       font-weight: 600; 
       text-align: center;
     }
 
-    /* Main Container - Holds Panels */
+    /* Main Layout */
     .game-container {
       display: flex;
-      gap: 15px;
+      flex-direction: row;
+      gap: 16px;
       align-items: flex-start;
       justify-content: center;
       width: 100%;
-      max-width: 1200px;
+      max-width: 1100px;
     }
 
-    /* Panel Base Styles */
     .canvas-panel {
       display: flex;
       flex-direction: column;
       align-items: center;
       background: #ffffff;
-      padding: 15px;
+      padding: 14px;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      flex: 1 1 0px;
+      flex: 1;
+      width: 100%;
       min-width: 0;
     }
 
     .canvas-panel h3 { 
-      margin-bottom: 10px; 
+      margin-bottom: 8px; 
       color: #444; 
       font-size: clamp(0.9rem, 2vw, 1.1rem);
       text-align: center;
     }
 
-    /* Target Wrapper - Keeps Canvas + Palette Together */
+    /* Target Wrapper & Canvas */
     .target-wrapper {
       display: flex;
+      flex-direction: row;
       gap: 12px;
       align-items: flex-start;
       width: 100%;
+      justify-content: center;
     }
 
-    .target-canvas {
-      flex: 1 1 0px;
-      min-width: 0;
-    }
-
-    #referenceContainer {
+    .target-canvas, #referenceContainer {
+      flex: 1;
       width: 100%;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
     }
 
-    /* Responsive SVG Styling */
+    /* SVG Scalability */
     svg {
       width: 100%;
       height: auto;
@@ -90,7 +92,6 @@
       border-radius: 12px;
       background-color: #ffffff;
       display: block;
-      margin: 0 auto;
     }
 
     .target-canvas path, .target-canvas circle, .target-canvas polygon {
@@ -109,8 +110,6 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 6px;
       width: 120px;
-      max-height: 450px;
-      aspect-ratio: 1 / 1;
       padding: 8px;
       background: #f8f9fa;
       border-radius: 12px;
@@ -120,8 +119,9 @@
 
     .swatch {
       width: 100%;
-      height: 100%;
-      border-radius: 6px;
+      aspect-ratio: 1 / 1;
+      min-height: 40px;
+      border-radius: 8px;
       cursor: pointer;
       border: 2px solid #e2e8f0;
       background-color: #ffffff;
@@ -160,59 +160,53 @@
     
     .shake { animation: shake 0.3s ease-in-out; }
 
-    /* Tablet & Mobile Layout - Side-by-Side Override */
-    @media (max-width: 768px) {
-      body {
-        padding: 8px;
-      }
-
+    /* Breakpoint for Small Laptops / Chromebooks / Tablets in Portrait */
+    @media (max-width: 850px) {
       .game-container {
-        flex-direction: row;
-        gap: 8px;
+        flex-direction: column;
+        align-items: center;
       }
 
       .canvas-panel {
-        padding: 8px;
-        border-radius: 10px;
-      }
-
-      .canvas-panel h3 {
-        font-size: 0.8rem;
-        margin-bottom: 6px;
+        max-width: 500px;
       }
 
       .target-wrapper {
-        gap: 6px;
+        flex-direction: column;
+        align-items: center;
       }
 
       .palette-container {
-        width: 70px;
-        padding: 4px;
-        gap: 4px;
-        border-radius: 8px;
+        width: 100%;
+        max-width: 450px;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        padding: 8px;
+        margin-top: 8px;
       }
 
       .swatch {
-        border-width: 1px;
-        border-radius: 4px;
-        padding: 1px;
-      }
-
-      .swatch.active {
-        border-width: 2px;
-      }
-
-      svg {
-        border-width: 2px;
-        border-radius: 8px;
+        min-height: 48px;
       }
     }
 
-    @media (max-width: 480px) {
+    /* Small Mobile Phones */
+    @media (max-width: 450px) {
+      body {
+        padding: 6px;
+      }
+
+      .canvas-panel {
+        padding: 10px;
+      }
+
       .palette-container {
-        width: 54px;
-        gap: 3px;
-        padding: 3px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+
+      .swatch {
+        min-height: 42px;
       }
     }
   </style>
