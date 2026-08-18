@@ -7,60 +7,95 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #eef2f5;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       min-height: 100vh;
-      padding: 15px;
+      padding: 12px;
+      overflow-x: hidden;
     }
-    h1 { color: #222; margin-bottom: 5px; text-align: center; }
-    .level-title { font-size: 1.3rem; color: #555; margin-bottom: 20px; font-weight: 600; text-align: center; }
+    
+    h1 { 
+      color: #222; 
+      margin-bottom: 2px; 
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      text-align: center;
+    }
 
+    .level-title { 
+      font-size: clamp(0.9rem, 2vw, 1.1rem); 
+      color: #555; 
+      margin-bottom: 12px; 
+      font-weight: 600; 
+      text-align: center;
+    }
+
+    /* Single Row Main Layout */
     .game-container {
       display: flex;
-      gap: 25px;
-      align-items: flex-start;
+      flex-direction: row;
+      gap: 12px;
+      align-items: stretch;
       justify-content: center;
-      flex-wrap: wrap;
       width: 100%;
       max-width: 1100px;
     }
 
-    .canvas-panel {
+    /* Common Card Panel Styling */
+    .panel {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .panel h3 { 
+      margin-bottom: 8px; 
+      color: #444; 
+      font-size: clamp(0.8rem, 1.5vw, 1rem);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* Panel 1: Reference */
+    .ref-panel {
+      flex: 0 1 32%;
+      max-width: 340px;
+    }
+
+    /* Panel 2: Target Canvas */
+    .target-panel {
+      flex: 0 1 45%;
+      max-width: 440px;
+    }
+
+    /* Panel 3: Color Palette */
+    .palette-panel {
+      flex: 0 0 auto;
+      min-width: 150px;
+      width: 18%;
+      max-width: 200px;
+    }
+
+    .canvas-wrapper {
       width: 100%;
-      max-width: 800px;
-    }
-    
-    @media (min-width: 900px) {
-      .canvas-panel {
-        width: auto;
-      }
-    }
-
-    .canvas-panel h3 { margin-bottom: 12px; color: #444; }
-
-    .target-wrapper {
       display: flex;
-      gap: 15px;
-      align-items: flex-start;
-      flex-wrap: wrap;
       justify-content: center;
-      width: 100%;
+      align-items: center;
+      flex: 1;
     }
 
+    /* SVG Scalability */
     svg {
       width: 100%;
-      max-width: 450px;
       height: auto;
       aspect-ratio: 1 / 1;
       border: 3px solid #d0d7de;
@@ -69,74 +104,65 @@
       display: block;
     }
 
-    #referenceContainer, #targetContainer {
-      width: 100%;
-      max-width: 450px;
-      display: flex;
-      justify-content: center;
-    }
-
     .target-canvas path, .target-canvas circle, .target-canvas polygon, .target-canvas rect {
       cursor: pointer;
       transition: fill 0.15s ease;
     }
+    
     .target-canvas path:hover, .target-canvas circle:hover, .target-canvas polygon:hover, .target-canvas rect:hover {
       stroke: #111;
       stroke-width: 3.5px;
     }
 
+    /* Palette Layout */
     .palette-container {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
       width: 100%;
-      max-width: 450px;
-      height: 120px;
-      padding: 10px;
-      background: #f8f9fa;
-      border-radius: 12px;
-      border: 2px solid #e2e8f0;
-    }
-
-    @media (min-width: 550px) {
-      .palette-container {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(6, 1fr);
-        width: 180px;
-        height: 450px;
-      }
+      height: 100%;
+      padding: 4px;
+      align-content: space-evenly;
     }
 
     .swatch {
       width: 100%;
-      height: 100%;
-      border-radius: 8px;
+      aspect-ratio: 1 / 1;
+      min-height: 48px;
+      border-radius: 10px;
       cursor: pointer;
-      border: 3px solid #e2e8f0;
+      border: 2px solid #cbd5e1;
       background-color: #ffffff;
       transition: transform 0.15s ease, border-color 0.15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 2px;
+      padding: 3px;
     }
+
     .swatch img {
       width: 100%;
       height: 100%;
       object-fit: contain;
       display: block;
     }
-    .swatch:hover {
-      transform: scale(1.04);
-      border-color: #a0aec0;
+
+    /* Optional scale boost for red image padding discrepancy */
+    .swatch img[src$="red.png"] {
+      transform: scale(1.15);
     }
+
+    .swatch:hover {
+      transform: scale(1.05);
+      border-color: #64748b;
+    }
+
     .swatch.active {
-      border-color: #2b6cb0;
-      border-width: 4px;
-      transform: scale(1.06);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      border-color: #2563eb;
+      border-width: 3px;
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
     @keyframes shake {
@@ -144,7 +170,18 @@
       25% { transform: translateX(-6px); }
       75% { transform: translateX(6px); }
     }
+    
     .shake { animation: shake 0.3s ease-in-out; }
+
+    /* Responsive scaling for narrower displays */
+    @media (max-width: 768px) {
+      body { padding: 6px; }
+      .game-container { gap: 6px; }
+      .panel { padding: 8px; border-radius: 12px; }
+      .palette-panel { min-width: 110px; }
+      .palette-container { gap: 4px; }
+      .swatch { min-height: 36px; border-radius: 6px; }
+    }
   </style>
 </head>
 <body>
@@ -153,17 +190,22 @@
   <div class="level-title" id="levelTitle">Level 1</div>
 
   <div class="game-container">
-    <div class="canvas-panel">
+    <!-- Panel 1: Reference -->
+    <div class="panel ref-panel">
       <h3>Reference Image</h3>
-      <div id="referenceContainer"></div>
+      <div id="referenceContainer" class="canvas-wrapper"></div>
     </div>
 
-    <div class="canvas-panel">
+    <!-- Panel 2: Target Canvas -->
+    <div class="panel target-panel">
       <h3>Color This Picture</h3>
-      <div class="target-wrapper">
-        <div id="targetContainer" class="target-canvas"></div>
-        <div class="palette-container" id="palette"></div>
-      </div>
+      <div id="targetContainer" class="canvas-wrapper target-canvas"></div>
+    </div>
+
+    <!-- Panel 3: Palette -->
+    <div class="panel palette-panel">
+      <h3>Palette</h3>
+      <div class="palette-container" id="palette"></div>
     </div>
   </div>
 
@@ -286,7 +328,7 @@
 
       const cols = 6;
       const rows = 4;
-      const squareSize = 450 / cols; // 75px
+      const squareSize = 450 / cols;
       const segments = [];
 
       let index = 0;
