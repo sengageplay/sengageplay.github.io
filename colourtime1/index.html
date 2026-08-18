@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Color Match Game</title>
+  <title>Done Now Play - Color Match Game</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,17 +14,20 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px;
     }
-    h1 { color: #222; margin-bottom: 5px; }
-    .level-title { font-size: 1.3rem; color: #555; margin-bottom: 20px; font-weight: 600; }
+    h1 { color: #222; margin-bottom: 5px; font-size: 1.8rem; text-align: center; }
+    .level-title { font-size: 1.1rem; color: #555; margin-bottom: 15px; font-weight: 600; text-align: center; }
 
+    /* Unified flex layout forcing side-by-side alignment on tablets */
     .game-container {
       display: flex;
-      gap: 25px;
-      align-items: flex-start;
+      gap: 12px;
+      align-items: stretch;
       justify-content: center;
-      flex-wrap: wrap;
+      width: 100%;
+      max-width: 1100px;
+      flex-wrap: nowrap;
     }
 
     .canvas-panel {
@@ -32,21 +35,33 @@
       flex-direction: column;
       align-items: center;
       background: #ffffff;
-      padding: 20px;
+      padding: 12px;
       border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      flex: 1 1 0;
+      min-width: 0; /* Prevents flex items from spilling over */
     }
-    .canvas-panel h3 { margin-bottom: 12px; color: #444; }
+    .canvas-panel h3 { 
+      margin-bottom: 8px; 
+      color: #444; 
+      font-size: 0.95rem; 
+      text-align: center;
+      white-space: nowrap;
+    }
 
-    .target-wrapper {
+    .svg-wrapper {
+      width: 100%;
       display: flex;
-      gap: 15px;
-      align-items: flex-start;
+      justify-content: center;
+      align-items: center;
     }
 
+    /* Fluid scaling for SVGs */
     svg {
-      width: 450px;
-      height: 450px;
+      width: 100%;
+      height: auto;
+      max-width: 320px;
+      aspect-ratio: 1 / 1;
       border: 3px solid #d0d7de;
       border-radius: 12px;
       background-color: #ffffff;
@@ -62,14 +77,27 @@
       stroke-width: 3.5px;
     }
 
+    /* Fluid Palette Container */
+    .palette-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      flex: 0 0 180px; /* Fixed proportional width for palette */
+    }
+
     .palette-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       grid-template-rows: repeat(6, 1fr);
-      gap: 8px;
-      width: 290px;
-      height: 450px;
-      padding: 10px;
+      gap: 6px;
+      width: 100%;
+      height: 100%;
+      min-height: 250px;
+      padding: 6px;
       background: #f8f9fa;
       border-radius: 12px;
       border: 2px solid #e2e8f0;
@@ -111,6 +139,21 @@
       75% { transform: translateX(6px); }
     }
     .shake { animation: shake 0.3s ease-in-out; }
+
+    /* Compact adjustments for small mobile phone portrait view */
+    @media (max-width: 600px) {
+      .game-container {
+        flex-wrap: wrap;
+      }
+      .palette-panel {
+        flex: 1 1 100%;
+      }
+      .palette-container {
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        min-height: 100px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -121,15 +164,17 @@
   <div class="game-container">
     <div class="canvas-panel">
       <h3>Reference Image</h3>
-      <div id="referenceContainer"></div>
+      <div id="referenceContainer" class="svg-wrapper"></div>
     </div>
 
     <div class="canvas-panel">
       <h3>Color This Picture</h3>
-      <div class="target-wrapper">
-        <div id="targetContainer" class="target-canvas"></div>
-        <div class="palette-container" id="palette"></div>
-      </div>
+      <div id="targetContainer" class="svg-wrapper target-canvas"></div>
+    </div>
+
+    <div class="palette-panel">
+      <h3>Palette</h3>
+      <div class="palette-container" id="palette"></div>
     </div>
   </div>
 
@@ -139,7 +184,7 @@
       { name: 'orange',      hex: '#E07D00', png: 'orange.png' },
       { name: 'yellow',      hex: '#F0E000', png: 'yellow.png' },
       { name: 'light_green', hex: '#A8F768', png: 'light_green.png' },
-      { name: 'green',       hex: '#0F8214', png: 'green.png' },
+      { name: 'green',        hex: '#0F8214', png: 'green.png' },
       { name: 'light_blue',  hex: '#00A89E', png: 'light_blue.png' },
       { name: 'blue',        hex: '#083D9F', png: 'blue.png' },
       { name: 'purple',      hex: '#71007F', png: 'purple.png' },
