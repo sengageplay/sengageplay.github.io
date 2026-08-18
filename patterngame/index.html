@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PECS Pattern Matcher - Done Now Play</title>
+  <style>
+    :root {
+      --bg-color: #f0f4f8;
+      --card-bg: #ffffff;
+      --primary: #4a90e2;
+      --accent: #e67e22;
+      --success: #2ecc71;
+      --text: #2c3e50;
+      --border-radius: 20px;
+      
+      /* INCREASED CARD & TRAY SIZES FOR BETTER VISIBILITY */
+      --card-size: clamp(80px, 12vw, 150px);
+      --tray-size: clamp(85px, 13vw, 160px);
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 12px;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+
+    .game-container {
+      background: var(--card-bg);
+      padding: clamp(15px, 3vw, 40px);
+      border-radius: var(--border-radius);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      max-width: 1400px;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .level-badge {
+      background-color: var(--primary);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: clamp(1rem, 2vw, 1.4rem);
+      font-weight: bold;
+    }
+
+    .stage-badge {
+      background-color: #f8fafc;
+      color: #777;
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: 2px solid #cbd5e1;
+      font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    }
+
+    .instruction {
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    /* Pattern Sequence Row - Wraps smoothly onto multiple rows */
+    .pattern-board {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 20px);
+      margin-bottom: 30px;
+      padding: clamp(15px, 2.5vw, 30px);
+      background-color: #f8fafc;
+      border-radius: var(--border-radius);
+      min-height: calc(var(--card-size) + 30px);
+      align-items: center;
+    }
+
+    .symbol-card {
+      width: var(--card-size);
+      height: var(--card-size);
+      background: white;
+      border: 4px solid #cbd5e1;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+      transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+      box-sizing: border-box;
+      overflow: hidden;
+      padding: 6px;
+    }
+
+    .symbol-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* Blank slots with Question Marks */
+    .symbol-card.empty {
+      border: 4px dashed #a0aec0;
+      background-color: #edf2f7;
+      color: #a0aec0;
+      font-weight: bold;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+    }
+
+    .symbol-card.active-target {
+      border: 4px dashed var(--accent);
+      background-color: #fffaf0;
+      color: var(--accent);
+      box-shadow: 0 0 18px rgba(230, 126, 34, 0.4);
+      transform: scale(1.05);
+    }
+
+    .symbol-card.drag-over {
+      background-color: #feebc8;
+      border-color: #d69e2e;
+      transform: scale(1.08);
+    }
+
+    .symbol-card.filled {
+      border: 4px solid var(--primary);
+    }
+
+    /* ONLY the newly placed symbol pops/animates */
+    .symbol-card.just-placed {
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Selection Tray */
+    .tray-container {
+      margin-top: 10px;
+    }
+
+    .tray-title {
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      color: #777;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .symbol-tray {
+      display: flex;
+      justify-content: center;
+      gap: clamp(14px, 3.5vw, 35px);
+      flex-wrap: wrap;
+    }
+
+    .tray-btn {
+      width: var(--tray-size);
+      height: var(--tray-size);
+      background: white;
+      border: 4px solid var(--primary);
+      border-radius: 20px;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+      transition: transform 0.15s, background-color 0.15s;
+      touch-action: none;
+      padding: 8px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .tray-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .tray-btn:active {
+      cursor: grabbing;
+      transform: scale(1.05);
+    }
+
+    @media (hover: hover) {
+      .tray-btn:hover {
+        transform: translateY(-4px);
+        background-color: #f0f7ff;
+      }
+    }
+
+    .message-overlay {
+      margin-top: 20px;
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+      font-weight: bold;
+      min-height: 45px;
+    }
+
+    .success-text { color: var(--success); }
+    .error-text { color: #e74c3c; }
+
+    .control-btn {
+      margin-top: 10px;
+      padding: clamp(10px, 2vw, 18px) clamp(24px, 4vw, 40px);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      display: none;
+      transition: background-color 0.2s;
+    }
+    
+    #restart-btn { background-color: var(--primary); }
+    #restart-btn:hover { background-color: #357abd; }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    .shake { animation: shake 0.4s ease-in-out; }
+
+    .confetti {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      opacity: 0.8;
+      z-index: 1000;
+      animation: fall linear forwards;
+    }
+
+    @keyframes fall {
+      to { transform: translateY(100vh) rotate(720deg); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container" id="confetti-container">
+  <div class="header-info">
+    <div class="stage-badge" id="stage-title">Stage 1/3</div>
+    <div class="level-badge" id="level-title">Pattern 1/9</div>
+  </div>
+
+  <div class="instruction">Tap or drag the correct PECS symbol to fill the <strong>?</strong> target:</div>
+
+  <div class="pattern-board" id="pattern-board"></div>
+
+  <div class="tray-container">
+    <div class="tray-title">Choose Your Symbol</div>
+    <div class="symbol-tray" id="symbol-tray"></div>
+  </div>
+
+  <div class="message-overlay" id="message-overlay"></div>
+  
+  <button class="control-btn" id="restart-btn" onclick="restartGame()">Play Again ↺</button>
+</div>
+
+<script>
+  function buildPattern(sequence, repeatCount) {
+    let result = [];
+    for (let i = 0; i < repeatCount; i++) {
+      result = result.concat(sequence);
+    }
+    return result;
+  }
+
+  const levels = [
+    /* --- Stage 1: AB Patterns --- */
+    { pattern: buildPattern(['1.png', '2.png'], 5), options: ['1.png', '2.png'] },
+    { pattern: buildPattern(['3.png', '4.png'], 5), options: ['3.png', '4.png'] },
+    { pattern: buildPattern(['5.png', '6.png'], 5), options: ['5.png', '6.png'] },
+
+    /* --- Stage 2: ABB Patterns --- */
+    { pattern: buildPattern(['7.png', '8.png', '8.png'], 3), options: ['7.png', '8.png'] },
+    { pattern: buildPattern(['9.png', '10.png', '10.png'], 3), options: ['9.png', '10.png'] },
+    { pattern: buildPattern(['11.png', '12.png', '12.png'], 3), options: ['11.png', '12.png'] },
+
+    /* --- Stage 3: ABC Patterns --- */
+    { pattern: buildPattern(['13.png', '14.png', '15.png'], 3), options: ['13.png', '14.png', '15.png'] },
+    { pattern: buildPattern(['16.png', '17.png', '18.png'], 3), options: ['16.png', '17.png', '18.png'] },
+    { pattern: buildPattern(['19.png', '20.png', '21.png'], 3), options: ['19.png', '20.png', '21.png'] }
+  ];
+
+  let currentLevelIdx = 0;
+  let currentTargetIdx = 0;
+  let levelData = {};
+  const slotsToHide = 3;
+
+  function loadLevel(index) {
+    currentLevelIdx = index;
+    levelData = levels[index];
+    currentTargetIdx = levelData.pattern.length - slotsToHide;
+    
+    updateHeader();
+
+    document.getElementById('message-overlay').innerText = '';
+    document.getElementById('message-overlay').className = 'message-overlay';
+    document.getElementById('restart-btn').style.display = 'none';
+
+    renderBoard();
+    renderTray();
+  }
+
+  function updateHeader() {
+    const stage = Math.floor(currentLevelIdx / 3) + 1;
+    document.getElementById('stage-title').innerText = `Stage ${stage}/3`;
+    document.getElementById('level-title').innerText = `Pattern ${currentLevelIdx + 1}/9`;
+  }
+
+  function renderBoard(justFilledIdx = null) {
+    const board = document.getElementById('pattern-board');
+    board.innerHTML = '';
+
+    levelData.pattern.forEach((imgSrc, i) => {
+      const card = document.createElement('div');
+      card.classList.add('symbol-card');
+
+      if (i < levelData.pattern.length - slotsToHide) {
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.alt = "PECS Symbol";
+        card.appendChild(img);
+      } else if (i < currentTargetIdx) {
+        const img = document.createElement('img');
+        img.src = levelData.pattern[i];
+        img.alt = "PECS Symbol";
+        card.appendChild(img);
+        card.classList.add('filled');
+
+        if (i === justFilledIdx) {
+          card.classList.add('just-placed');
+        }
+      } else {
+        card.innerText = '?';
+        card.classList.add('empty');
+        
+        if (i === currentTargetIdx) {
+          card.classList.add('active-target');
+          
+          card.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); });
+          card.addEventListener('dragleave', (e) => e.currentTarget.classList.remove('drag-over'));
+          card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const droppedSymbol = e.dataTransfer.getData('text/plain');
+            handleChoice(droppedSymbol);
+          });
+        }
+      }
+
+      board.appendChild(card);
+    });
+  }
+
+  function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  function renderTray() {
+    const tray = document.getElementById('symbol-tray');
+    tray.innerHTML = '';
+
+    const jumbledOptions = shuffleArray(levelData.options);
+
+    jumbledOptions.forEach(imgSrc => {
+      const btn = document.createElement('div');
+      btn.classList.add('tray-btn');
+      btn.setAttribute('draggable', 'true');
+
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      img.alt = "PECS Symbol Option";
+      btn.appendChild(img);
+
+      btn.onclick = () => handleChoice(imgSrc);
+
+      btn.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', imgSrc);
+      });
+
+      tray.appendChild(btn);
+    });
+  }
+
+  function handleChoice(selectedSymbol) {
+    const expectedSymbol = levelData.pattern[currentTargetIdx];
+
+    if (selectedSymbol === expectedSymbol) {
+      const solvedSlot = currentTargetIdx;
+      currentTargetIdx++;
+      
+      renderBoard(solvedSlot);
+
+      if (currentTargetIdx === levelData.pattern.length) {
+        handlePatternComplete();
+      }
+    } else {
+      const msg = document.getElementById('message-overlay');
+      msg.innerText = 'Try again!';
+      msg.className = 'message-overlay error-text';
+      
+      const activeCard = document.querySelector('.active-target');
+      if (activeCard) {
+        activeCard.classList.add('shake');
+        setTimeout(() => activeCard.classList.remove('shake'), 400);
+      }
+    }
+  }
+
+  function handlePatternComplete() {
+    const stage = Math.floor(currentLevelIdx / 3) + 1;
+    const isStageEnd = (currentLevelIdx + 1) % 3 === 0;
+    const isGameEnd = (currentLevelIdx === levels.length - 1);
+
+    let message = 'Fantastic! Pattern Complete!';
+    
+    if (isGameEnd) {
+      message = '🌟 AMAZING! You completed the whole game!';
+      launchConfetti();
+      document.getElementById('restart-btn').style.display = 'inline-block';
+    } else if (isStageEnd) {
+      message = `🎉 Excellent! You finished Stage ${stage}!`;
+      launchConfetti();
+    }
+
+    const msg = document.getElementById('message-overlay');
+    msg.innerText = message;
+    msg.className = 'message-overlay success-text';
+
+    // AUTOMATIC ADVANCEMENT TO NEXT LEVEL AFTER 1.5 SECONDS
+    if (!isGameEnd) {
+      setTimeout(() => {
+        nextLevel();
+      }, 1500);
+    }
+  }
+
+  function nextLevel() {
+    currentLevelIdx++;
+    loadLevel(currentLevelIdx);
+  }
+
+  function restartGame() {
+    loadLevel(0);
+  }
+
+  function launchConfetti() {
+    const container = document.getElementById('confetti-container');
+    const colors = ['#4a90e2', '#e67e22', '#2ecc71', '#e74c3c', '#f1c40f'];
+    
+    for (let i = 0; i < 40; i++) {
+      const piece = document.createElement('div');
+      piece.classList.add('confetti');
+      
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.left = (Math.random() * 100) + '%';
+      piece.style.top = '-20px';
+      piece.style.animationDuration = (2 + Math.random() * 3) + 's';
+      piece.style.animationDelay = (Math.random() * 0.5) + 's';
+      
+      container.appendChild(piece);
+      
+      setTimeout(() => piece.remove(), 5000);
+    }
+  }
+
+  loadLevel(0);
+</script>
+
+</body>
+</html>
