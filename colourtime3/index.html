@@ -14,10 +14,10 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px;
     }
-    h1 { color: #222; margin-bottom: 5px; }
-    .level-title { font-size: 1.3rem; color: #555; margin-bottom: 20px; font-weight: 600; }
+    h1 { color: #222; margin-bottom: 5px; text-align: center; }
+    .level-title { font-size: 1.3rem; color: #555; margin-bottom: 20px; font-weight: 600; text-align: center; }
 
     .game-container {
       display: flex;
@@ -25,6 +25,8 @@
       align-items: flex-start;
       justify-content: center;
       flex-wrap: wrap;
+      width: 100%;
+      max-width: 1100px;
     }
 
     .canvas-panel {
@@ -35,22 +37,43 @@
       padding: 20px;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 800px;
     }
+    
+    @media (min-width: 900px) {
+      .canvas-panel {
+        width: auto;
+      }
+    }
+
     .canvas-panel h3 { margin-bottom: 12px; color: #444; }
 
     .target-wrapper {
       display: flex;
       gap: 15px;
       align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
     }
 
     svg {
-      width: 450px;
-      height: 450px;
+      width: 100%;
+      max-width: 450px;
+      height: auto;
+      aspect-ratio: 1 / 1;
       border: 3px solid #d0d7de;
       border-radius: 12px;
       background-color: #ffffff;
       display: block;
+    }
+
+    #referenceContainer, #targetContainer {
+      width: 100%;
+      max-width: 450px;
+      display: flex;
+      justify-content: center;
     }
 
     .target-canvas path, .target-canvas circle, .target-canvas polygon, .target-canvas rect {
@@ -64,16 +87,27 @@
 
     .palette-container {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(6, 1fr);
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(3, 1fr);
       gap: 8px;
-      width: 290px;
-      height: 450px;
+      width: 100%;
+      max-width: 450px;
+      height: 120px;
       padding: 10px;
       background: #f8f9fa;
       border-radius: 12px;
       border: 2px solid #e2e8f0;
     }
+
+    @media (min-width: 550px) {
+      .palette-container {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(6, 1fr);
+        width: 180px;
+        height: 450px;
+      }
+    }
+
     .swatch {
       width: 100%;
       height: 100%;
@@ -162,7 +196,7 @@
           { id: 'moon',        targetColor: 'grey',        type: 'circle', cx: 360, cy: 220, r: 35 },
           { id: 'fin_left',    targetColor: 'red',         type: 'path', path: 'M 180 230 L 130 310 L 180 290 Z' },
           { id: 'fin_right',   targetColor: 'red',         type: 'path', path: 'M 270 230 L 320 310 L 270 290 Z' },
-          { id: 'fire_outer',  targetColor: 'orange',     type: 'path', path: 'M 195 310 L 225 410 L 255 310 Z' },
+          { id: 'fire_outer',  targetColor: 'orange',      type: 'path', path: 'M 195 310 L 225 410 L 255 310 Z' },
           { id: 'fire_inner',  targetColor: 'yellow',      type: 'path', path: 'M 210 310 L 225 370 L 240 310 Z' },
           { id: 'rocket_body', targetColor: 'grey',        type: 'path', path: 'M 180 150 L 270 150 L 270 310 L 180 310 Z' },
           { id: 'nose_cone',   targetColor: 'red',         type: 'path', path: 'M 180 150 C 180 70 270 70 270 150 Z' },
