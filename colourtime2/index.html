@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #eef2f5;
@@ -14,72 +15,115 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px;
     }
-    h1 { color: #222; margin-bottom: 5px; }
-    .level-title { font-size: 1.3rem; color: #555; margin-bottom: 20px; font-weight: 600; }
+    
+    h1 { 
+      color: #222; 
+      margin-bottom: 5px; 
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      text-align: center;
+    }
 
+    .level-title { 
+      font-size: clamp(1rem, 2.5vw, 1.3rem); 
+      color: #555; 
+      margin-bottom: 15px; 
+      font-weight: 600; 
+      text-align: center;
+    }
+
+    /* Main Container - Holds Panels */
     .game-container {
       display: flex;
-      gap: 25px;
+      gap: 15px;
       align-items: flex-start;
       justify-content: center;
-      flex-wrap: wrap;
+      width: 100%;
+      max-width: 1200px;
     }
 
+    /* Panel Base Styles */
     .canvas-panel {
       display: flex;
       flex-direction: column;
       align-items: center;
       background: #ffffff;
-      padding: 20px;
+      padding: 15px;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      flex: 1 1 0px;
+      min-width: 0;
     }
-    .canvas-panel h3 { margin-bottom: 12px; color: #444; }
 
+    .canvas-panel h3 { 
+      margin-bottom: 10px; 
+      color: #444; 
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      text-align: center;
+    }
+
+    /* Target Wrapper - Keeps Canvas + Palette Together */
     .target-wrapper {
       display: flex;
-      gap: 15px;
+      gap: 12px;
       align-items: flex-start;
+      width: 100%;
     }
 
+    .target-canvas {
+      flex: 1 1 0px;
+      min-width: 0;
+    }
+
+    #referenceContainer {
+      width: 100%;
+    }
+
+    /* Responsive SVG Styling */
     svg {
-      width: 450px;
-      height: 450px;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      max-width: 450px;
       border: 3px solid #d0d7de;
       border-radius: 12px;
       background-color: #ffffff;
       display: block;
+      margin: 0 auto;
     }
 
     .target-canvas path, .target-canvas circle, .target-canvas polygon {
       cursor: pointer;
       transition: fill 0.15s ease;
     }
+    
     .target-canvas path:hover, .target-canvas circle:hover, .target-canvas polygon:hover {
       stroke: #111;
       stroke-width: 3.5px;
     }
 
+    /* Responsive Grid Palette */
     .palette-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(6, 1fr);
-      gap: 8px;
-      width: 290px;
-      height: 450px;
-      padding: 10px;
+      gap: 6px;
+      width: 120px;
+      max-height: 450px;
+      aspect-ratio: 1 / 1;
+      padding: 8px;
       background: #f8f9fa;
       border-radius: 12px;
       border: 2px solid #e2e8f0;
+      flex-shrink: 0;
     }
+
     .swatch {
       width: 100%;
       height: 100%;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      border: 3px solid #e2e8f0;
+      border: 2px solid #e2e8f0;
       background-color: #ffffff;
       transition: transform 0.15s ease, border-color 0.15s ease;
       display: flex;
@@ -88,19 +132,22 @@
       overflow: hidden;
       padding: 2px;
     }
+
     .swatch img {
       width: 100%;
       height: 100%;
       object-fit: contain;
       display: block;
     }
+
     .swatch:hover {
       transform: scale(1.04);
       border-color: #a0aec0;
     }
+
     .swatch.active {
       border-color: #2b6cb0;
-      border-width: 4px;
+      border-width: 3px;
       transform: scale(1.06);
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
@@ -110,7 +157,64 @@
       25% { transform: translateX(-6px); }
       75% { transform: translateX(6px); }
     }
+    
     .shake { animation: shake 0.3s ease-in-out; }
+
+    /* Tablet & Mobile Layout - Side-by-Side Override */
+    @media (max-width: 768px) {
+      body {
+        padding: 8px;
+      }
+
+      .game-container {
+        flex-direction: row;
+        gap: 8px;
+      }
+
+      .canvas-panel {
+        padding: 8px;
+        border-radius: 10px;
+      }
+
+      .canvas-panel h3 {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+      }
+
+      .target-wrapper {
+        gap: 6px;
+      }
+
+      .palette-container {
+        width: 70px;
+        padding: 4px;
+        gap: 4px;
+        border-radius: 8px;
+      }
+
+      .swatch {
+        border-width: 1px;
+        border-radius: 4px;
+        padding: 1px;
+      }
+
+      .swatch.active {
+        border-width: 2px;
+      }
+
+      svg {
+        border-width: 2px;
+        border-radius: 8px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .palette-container {
+        width: 54px;
+        gap: 3px;
+        padding: 3px;
+      }
+    }
   </style>
 </head>
 <body>
