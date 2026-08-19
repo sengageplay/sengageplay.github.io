@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build an Image Game</title>
+  <style>
+    :root {
+      --bg-color: #f0f4f8;
+      --card-bg: #ffffff;
+      --primary-color: #4a90e2;
+      --success-color: #4caf50;
+      --warning-color: #ff9800;
+      --error-color: #e74c3c;
+      --text-color: #2c3e50;
+      --border-radius: clamp(8px, 2vmin, 16px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(8px, 1.5vmin, 16px);
+      gap: clamp(8px, 1.5vmin, 16px);
+    }
+
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: clamp(36px, 5vh, 48px);
+      flex-shrink: 0;
+    }
+
+    /* Links back to the homepage one directory up */
+    .home-btn {
+      background-color: var(--primary-color);
+      color: white;
+      text-decoration: none;
+      padding: clamp(6px, 1.2vmin, 10px) clamp(12px, 2vmin, 20px);
+      font-size: clamp(0.9rem, 2vmin, 1.1rem);
+      font-weight: bold;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .home-btn:hover {
+      background-color: #357abd;
+      transform: translateY(-2px);
+    }
+
+    .level-badge {
+      background-color: var(--card-bg);
+      padding: clamp(6px, 1vmin, 8px) clamp(12px, 2vmin, 18px);
+      font-size: clamp(0.9rem, 2vmin, 1.2rem);
+      font-weight: 800;
+      border-radius: var(--border-radius);
+      border: clamp(2px, 0.4vmin, 4px) solid var(--primary-color);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 1300px;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(16px, 3vw, 36px);
+      min-height: 0;
+    }
+
+    .picture-board {
+      position: relative;
+      width: min(60vh, 42vw);
+      height: min(60vh, 42vw);
+      min-width: 250px;
+      min-height: 250px;
+      max-width: 600px;
+      max-height: 600px;
+      background-color: #e0e6ed;
+      border: clamp(4px, 0.8vmin, 8px) solid #ffffff;
+      border-radius: clamp(12px, 2.5vmin, 24px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .strips-container {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: repeat(5, 1fr);
+    }
+
+    .strip-slot {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-bottom: clamp(1px, 0.3vmin, 3px) dashed #ffffff;
+      overflow: hidden;
+    }
+
+    .strip-slot:last-child {
+      border-bottom: none;
+    }
+
+    .strip-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+      filter: grayscale(30%);
+      transition: opacity 0.4s ease-in-out, filter 0.4s ease-in-out;
+    }
+
+    .strip-img.revealed {
+      opacity: 1;
+      filter: grayscale(0%);
+    }
+
+    .board-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      background-color: transparent;
+    }
+
+    .board-video.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .video-error-msg {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 25;
+      background-color: rgba(231, 76, 60, 0.95);
+      color: white;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+      text-align: center;
+      line-height: 1.3;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .board-next-btn {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 20;
+      background-color: var(--success-color);
+      color: white;
+      border: none;
+      padding: clamp(8px, 1.5vmin, 14px) clamp(16px, 3vmin, 28px);
+      font-size: clamp(0.9rem, 2vmin, 1.2rem);
+      font-weight: bold;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .board-next-btn:hover {
+      background-color: #45a049;
+      transform: scale(1.05);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .sidebar {
+      flex: 1;
+      height: min(60vh, 42vw);
+      max-height: 600px;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .choices-grid {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: clamp(8px, 1.5vmin, 16px);
+    }
+
+    .pecs-tile {
+      width: 100%;
+      height: 100%;
+      background-color: var(--card-bg);
+      border: clamp(3px, 0.5vmin, 5px) solid #cbd5e1;
+      border-radius: var(--border-radius);
+      padding: clamp(4px, 1vmin, 10px);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s, border-color 0.2s, opacity 0.3s;
+    }
+
+    .pecs-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: clamp(4px, 1vmin, 8px);
+    }
+
+    .pecs-tile:hover {
+      transform: scale(1.05);
+      border-color: var(--primary-color);
+    }
+
+    .pecs-tile.shaking {
+      animation: wobble 0.4s ease-in-out;
+      border-color: var(--warning-color);
+    }
+
+    @keyframes wobble {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-6px) rotate(-2deg); }
+      40% { transform: translateX(6px) rotate(2deg); }
+      60% { transform: translateX(-4px) rotate(-1deg); }
+      80% { transform: translateX(4px) rotate(1deg); }
+      100% { transform: translateX(0); }
+    }
+
+    .pecs-tile.solved {
+      opacity: 0.15;
+      transform: scale(0.92);
+      pointer-events: none;
+      border-color: var(--success-color);
+      filter: grayscale(80%);
+    }
+
+    @media (max-aspect-ratio: 1/1) {
+      main {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .picture-board {
+        width: min(45vh, 85vw);
+        height: min(45vh, 85vw);
+      }
+      .sidebar {
+        width: min(45vh, 85vw);
+        height: auto;
+      }
+      .choices-grid {
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        aspect-ratio: 5 / 2;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <!-- Point back to the parent folder menu -->
+    <a href="../" class="home-btn">🏠 Main Menu</a>
+    <div class="level-badge" id="level-indicator">Level 1 of 3</div>
+  </header>
+
+  <main>
+    <div id="picture-board" class="picture-board">
+      <div id="strips-container" class="strips-container"></div>
+      <video id="board-video" class="board-video" playsinline preload="auto" muted></video>
+      <div id="video-error-msg" class="video-error-msg hidden"></div>
+      <button id="next-level-btn" class="board-next-btn hidden">Next Level ➔</button>
+    </div>
+
+    <div class="sidebar">
+      <div id="choices-grid" class="choices-grid"></div>
+    </div>
+  </main>
+
+  <script>
+    let currentLevel = 1;
+    let revealedCount = 0;
+    const TOTAL_STRIPS = 5;
+    const revealedStrips = new Set();
+
+    const stripsContainer = document.getElementById('strips-container');
+    const choicesGrid = document.getElementById('choices-grid');
+    const levelIndicator = document.getElementById('level-indicator');
+    const boardVideo = document.getElementById('board-video');
+    const videoErrorMsg = document.getElementById('video-error-msg');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+
+    function loadLevel(levelNum) {
+      currentLevel = levelNum;
+      revealedCount = 0;
+      revealedStrips.clear();
+      levelIndicator.textContent = `Level ${currentLevel} of 3`;
+
+      boardVideo.pause();
+      boardVideo.removeAttribute('src');
+      boardVideo.load();
+      boardVideo.classList.remove('active');
+      videoErrorMsg.classList.add('hidden');
+      videoErrorMsg.textContent = '';
+      nextLevelBtn.classList.add('hidden');
+
+      // Looks inside the local assets folder of this game
+      const levelBasePath = `assets/level${currentLevel}`;
+
+      stripsContainer.innerHTML = '';
+      for (let i = 1; i <= TOTAL_STRIPS; i++) {
+        const stripSlot = document.createElement('div');
+        stripSlot.className = 'strip-slot';
+        stripSlot.dataset.strip = i;
+
+        const img = document.createElement('img');
+        img.src = `${levelBasePath}/${i}.png`;
+        img.alt = `Strip ${i}`;
+        img.className = 'strip-img';
+
+        stripSlot.appendChild(img);
+        stripsContainer.appendChild(stripSlot);
+      }
+
+      const tileNumbers = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+      shuffleArray(tileNumbers);
+
+      choicesGrid.innerHTML = '';
+      tileNumbers.forEach(num => {
+        const tile = document.createElement('button');
+        tile.className = 'pecs-tile';
+        tile.dataset.num = num;
+
+        const img = document.createElement('img');
+        img.src = `${levelBasePath}/${num}.png`;
+        img.alt = `PECS Symbol ${num}`;
+
+        tile.appendChild(img);
+        tile.addEventListener('click', () => handleTileClick(num, tile));
+        choicesGrid.appendChild(tile);
+      });
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function handleTileClick(num, tileElement) {
+      if (tileElement.classList.contains('solved') || tileElement.classList.contains('shaking')) {
+        return;
+      }
+
+      if (num >= 6 && num <= 10) {
+        const stripIndex = num - 5;
+
+        if (!revealedStrips.has(stripIndex)) {
+          revealedStrips.add(stripIndex);
+          revealedCount++;
+
+          const slot = stripsContainer.querySelector(`[data-strip="${stripIndex}"]`);
+          if (slot) {
+            const img = slot.querySelector('.strip-img');
+            img.classList.add('revealed');
+          }
+
+          tileElement.classList.add('solved');
+
+          if (revealedCount === TOTAL_STRIPS) {
+            triggerLevelWin();
+          }
+        }
+      } else {
+        tileElement.classList.add('shaking');
+        setTimeout(() => {
+          tileElement.classList.remove('shaking');
+        }, 400);
+      }
+    }
+
+    function triggerLevelWin() {
+      const levelBasePath = `assets/level${currentLevel}`;
+      
+      document.querySelectorAll('.strip-img').forEach(img => img.classList.add('revealed'));
+      nextLevelBtn.classList.remove('hidden');
+
+      const videoPaths = [
+        `${levelBasePath}/1.mp4`,
+        `${levelBasePath}/1.MP4`,
+        `assets/1.mp4`
+      ];
+
+      tryPlayNextVideoPath(videoPaths, 0);
+    }
+
+    function tryPlayNextVideoPath(paths, index) {
+      if (index >= paths.length) {
+        showVideoError(`⚠️ Video file not found.<br>Checked: <b>assets/level${currentLevel}/1.mp4</b>`);
+        return;
+      }
+
+      const targetPath = paths[index];
+      boardVideo.src = targetPath;
+      boardVideo.classList.add('active');
+
+      const handleVideoError = () => {
+        boardVideo.removeEventListener('error', handleVideoError);
+        tryPlayNextVideoPath(paths, index + 1);
+      };
+
+      boardVideo.addEventListener('error', handleVideoError, { once: true });
+
+      boardVideo.muted = false;
+      const playPromise = boardVideo.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          boardVideo.muted = true;
+          boardVideo.play().catch(err => {
+            console.log(`Failed playing path ${targetPath}:`, err);
+            handleVideoError();
+          });
+        });
+      }
+    }
+
+    function showVideoError(msgHtml) {
+      boardVideo.classList.remove('active');
+      videoErrorMsg.innerHTML = msgHtml;
+      videoErrorMsg.classList.remove('hidden');
+    }
+
+    boardVideo.addEventListener('ended', () => {
+      advanceLevel();
+    });
+
+    nextLevelBtn.addEventListener('click', () => {
+      advanceLevel();
+    });
+
+    function advanceLevel() {
+      if (currentLevel < 3) {
+        loadLevel(currentLevel + 1);
+      } else {
+        loadLevel(1);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLevel(1);
+    });
+  </script>
+</body>
+</html>
