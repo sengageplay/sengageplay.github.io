@@ -339,64 +339,66 @@
         <p>© DoneNowPlay — Simple, calm symbol games for visual learners.</p>
     </footer>
 
-    <!-- SUPABASE CONNECTION & AUTH LOGIC SCRIPT -->
-    <script>
-        // REPLACE THESE TWO STRINGS WITH YOUR ACTUAL SUPABASE API KEYS FROM PROJECT SETTINGS -> API
-        const SUPABASE_URL = 'YOUR_PROJECT_URL_HERE';
-        const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+   <!-- SUPABASE CONNECTION & AUTH LOGIC SCRIPT -->
+<script>
+    // 1. Initialize Supabase safely (only once)
+    const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
+    
+    // We check if it's already initialized to prevent duplicate declarations
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Check if user is already logged in on page load
-        async function checkUserSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                document.getElementById('logged-out-view').style.display = 'none';
-                document.getElementById('logged-in-view').style.display = 'flex';
-                document.getElementById('user-email-display').textContent = session.user.email;
-            }
+    // Check if user is already logged in on page load
+    async function checkUserSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            document.getElementById('logged-out-view').style.display = 'none';
+            document.getElementById('logged-in-view').style.display = 'flex';
+            document.getElementById('user-email-display').textContent = session.user.email;
         }
+    }
 
-        // Prompt for Sign Up
-        async function promptSignUp() {
-            const email = prompt("Enter your email to sign up:");
-            if (!email) return;
-            const password = prompt("Enter a password (at least 6 characters):");
-            if (!password) return;
+    // Prompt for Sign Up
+    async function promptSignUp() {
+        const email = prompt("Enter your email to sign up:");
+        if (!email) return;
+        const password = prompt("Enter a password (at least 6 characters):");
+        if (!password) return;
 
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) {
-                alert("Sign up error: " + error.message);
-            } else {
-                alert("Account created successfully! You can now sign in.");
-            }
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) {
+            alert("Sign up error: " + error.message);
+        } else {
+            alert("Account created successfully! You can now sign in.");
         }
+    }
 
-        // Prompt for Sign In
-        async function promptSignIn() {
-            const email = prompt("Enter your email:");
-            if (!email) return;
-            const password = prompt("Enter your password:");
-            if (!password) return;
+    // Prompt for Sign In
+    async function promptSignIn() {
+        const email = prompt("Enter your email:");
+        if (!email) return;
+        const password = prompt("Enter your password:");
+        if (!password) return;
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                alert("Login failed: " + error.message);
-            } else {
-                alert("Logged in successfully!");
-                location.reload();
-            }
-        }
-
-        // Handle Sign Out
-        async function handleSignOut() {
-            await supabase.auth.signOut();
-            alert("Signed out successfully.");
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert("Login failed: " + error.message);
+        } else {
+            alert("Logged in successfully!");
             location.reload();
         }
+    }
 
-        // Run session check when page loads
-        window.addEventListener('DOMContentLoaded', checkUserSession);
-    </script>
+    // Handle Sign Out
+    async function handleSignOut() {
+        await supabaseClient.auth.signOut();
+        alert("Signed out successfully.");
+        location.reload();
+    }
+
+    // Run session check when page loads
+    window.addEventListener('DOMContentLoaded', checkUserSession);
+</script>
+
 </body>
 </html>
