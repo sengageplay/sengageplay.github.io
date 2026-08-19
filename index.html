@@ -12,7 +12,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #121214; /* Calming, low-distraction dark background */
+            background-color: #121214;
             font-family: 'Segoe UI', system-ui, sans-serif;
             text-align: center;
         }
@@ -20,30 +20,21 @@
         header {
             padding: 25px 20px;
             background-color: #1a1a1e;
-            border-bottom: 4px solid #4ade80; /* Friendly green accent anchor */
+            border-bottom: 4px solid #4ade80;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
 
-        /* LOGO STYLING */
         .site-logo {
-            max-width: 380px; /* Limits size on desktop */
-            width: 100%;       /* Allows logo to shrink nicely on mobile */
+            max-width: 380px;
+            width: 100%;
             height: auto;
             margin-bottom: 10px;
             display: block;
         }
 
-        header p {
-            margin: 4px 0 0;
-            color: #a1a1aa;
-            font-size: 1.3rem;
-            font-weight: 500;
-        }
-
-        /* AUTH UI STYLING */
         .auth-buttons {
             display: flex;
             gap: 10px;
@@ -85,7 +76,6 @@
             font-weight: 600;
         }
 
-        /* Fixed 4-column Grid Layout */
         .arcade-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -95,13 +85,12 @@
             padding: 0 20px;
         }
 
-        /* Responsive tweak for smaller screens (tablets/phones) */
         @media (max-width: 768px) {
             .arcade-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
             .site-logo {
-                max-width: 280px; /* Compact logo size for mobile screens */
+                max-width: 280px;
             }
         }
 
@@ -117,6 +106,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .game-card:hover, .game-card:focus {
@@ -134,6 +124,19 @@
             background-color: #ffffff;
         }
 
+        .premium-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f59e0b;
+            color: #000000;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
         footer {
             padding: 40px 20px;
             color: #71717a;
@@ -144,25 +147,21 @@
 <body>
 
   <header style="padding: 20px 30px; background-color: #1a1a1e; border-bottom: 4px solid #4ade80; text-align: center;">
-    
-    <!-- TOP NAVIGATION BAR WITH BUY ME A COFFEE & AUTH -->
     <nav style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap;">
         <a href="index.html" style="color: #4ade80; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Games</a>
         <a href="about.html" style="color: #a1a1aa; text-decoration: none; font-weight: 600; font-size: 1.1rem;">About Us</a>
         
-        <a href="https://buymeacoffee.com/donenowplay" target="_blank" rel="noopener noreferrer" style="background-color: #FFDD00; color: #000000; text-decoration: none; font-weight: 700; font-size: 0.95rem; padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.15s ease;">
+        <a href="https://buymeacoffee.com/donenowplay" target="_blank" rel="noopener noreferrer" style="background-color: #FFDD00; color: #000000; text-decoration: none; font-weight: 700; font-size: 0.95rem; padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
             ☕ Support Us
         </a>
 
         <!-- AUTHENTICATION UI AREA -->
         <div id="auth-container">
-            <!-- Logged Out View -->
             <div id="logged-out-view" class="auth-buttons">
                 <button onclick="promptSignIn()" class="auth-btn">Sign In</button>
                 <button onclick="promptSignUp()" class="auth-btn primary">Sign Up</button>
             </div>
 
-            <!-- Logged In View (Hidden by default) -->
             <div id="logged-in-view" style="display: none;" class="auth-buttons">
                 <span id="user-email-display"></span>
                 <button onclick="handleSignOut()" class="auth-btn">Sign Out</button>
@@ -170,7 +169,6 @@
         </div>
     </nav>
 
-    <!-- CENTERED MAIN LOGO -->
     <div style="display: flex; justify-content: center; align-items: center;">
         <a href="index.html">
             <img src="images/donenowplaylogo.png" alt="DoneNowPlay Logo" class="site-logo" style="max-width: 280px; width: 100%; height: auto; display: block; margin: 0 auto;">
@@ -178,209 +176,124 @@
     </div>
 
     <p style="margin-top: 15px; color: #a1a1aa; font-size: 1.1rem;">Simple symbol games for visual minds.</p>
-
-</header>
+  </header>
 
     <div class="arcade-grid">
 
-        <!-- GAME CARD 1: kaliedoscope art -->
-        <a href="kaleidscopeart/" class="game-card">
-            <img src="images/kaleidoscope.png" alt="kaleidsoscope art">
-        </a>
+        <!-- FREE GAMES (1 TO 20) -->
+        <a href="kaleidscopeart/" class="game-card"><img src="images/kaleidoscope.png" alt="kaleidoscope art"></a>
+        <a href="magicfinger/" class="game-card"><img src="images/magicfinger2.png" alt="Magic Finger"></a>
+        <a href="waterandsand/" class="game-card"><img src="images/waterandsand.png" alt="Water and Sand"></a>
+        <a href="coloursplat/" class="game-card"><img src="images/splattitle.png" alt="Colour Splat"></a>
+        <a href="gift/" class="game-card"><img src="images/gift.png" alt="Gift Game"></a>
+        <a href="fish/" class="game-card"><img src="images/fishtitle.png" alt="Fish Game"></a>
+        <a href="shop/" class="game-card"><img src="images/shop.png" alt="Shop Game"></a>
+        <a href="spell/" class="game-card"><img src="images/spell.png" alt="Spell Game"></a>
+        <a href="circles/" class="game-card"><img src="images/circles.png" alt="Circles Game"></a>
+        <a href="touchshapes/" class="game-card"><img src="images/touchshapes.png" alt="Touch Shapes Game"></a>
+        <a href="animalmatch/" class="game-card"><img src="images/safarimatchtitlecard.png" alt="Safari Match game"></a>
+        <a href="animalstamp/" class="game-card"><img src="images/animalstamptitlecard.png" alt="Animal Stamp game"></a>
+        <a href="minibeastwhack/" class="game-card"><img src="images/minibeasttitlecard.png" alt="Minibeast Whack Game"></a>
+        <a href="school_bag/" class="game-card"><img src="images/school_bag.png" alt="School Bag Game"></a>
+        <a href="feelings/" class="game-card"><img src="images/feel.png" alt="Feelings Sentence Game"></a>
+        <a href="hotorcold/" class="game-card"><img src="images/hotcold.png" alt="Hot or Cold Game"></a>
+        <a href="shapesort" class="game-card"><img src="images/shapesorttitle.png" alt="shape sort Game"></a>
+        <a href="mazerescue/" class="game-card"><img src="images/mazerescuetitle.png" alt="Maze Rescue"></a>
+        <a href="colourtime1/" class="game-card"><img src="images/colourtime1.png" alt="Colour Time 1"></a>
+        <a href="buildgame1/" class="game-card"><img src="images/build1.png" alt="Build an Image Game 1"></a>
 
-        <!-- GAME CARD 2: Colour Choose -->
-        <a href="colourchoose/" class="game-card">
-            <img src="images/colourchoosetitle.png" alt="colour choose game">
-        </a>
-
-        <!-- GAME CARD 3: Magic Finger -->
-        <a href="magicfinger/" class="game-card">
-            <img src="images/magicfinger2.png" alt="Magic Finger">
-        </a>
-
-        <!-- GAME CARD 4: Water and Sand -->
-        <a href="waterandsand/" class="game-card">
-            <img src="images/waterandsand.png" alt="Water and Sand">
-        </a>
-
-        <!-- GAME CARD 5: Colour Splat -->
-        <a href="coloursplat/" class="game-card">
-            <img src="images/splattitle.png" alt="Colour Splat">
-        </a>
-
-        <!-- GAME CARD 6: Gift -->
-        <a href="gift/" class="game-card">
-            <img src="images/gift.png" alt="Gift Game">
-        </a>
-
-        <!-- GAME CARD 7: Fish -->
-        <a href="fish/" class="game-card">
-            <img src="images/fishtitle.png" alt="Fish Game">
-        </a>
-
-        <!-- GAME CARD 8: Shop -->
-        <a href="shop/" class="game-card">
-            <img src="images/shop.png" alt="Shop Game">
-        </a>
-
-        <!-- GAME CARD 9: Spell -->
-        <a href="spell/" class="game-card">
-            <img src="images/spell.png" alt="Spell Game">
-        </a>
-
-        <!-- GAME CARD 10: Circles -->
-        <a href="circles/" class="game-card">
-            <img src="images/circles.png" alt="Circles Game">
-        </a>
-
-        <!-- GAME CARD 11: Touch Shapes -->
-        <a href="touchshapes/" class="game-card">
-            <img src="images/touchshapes.png" alt="Touch Shapes Game">
-        </a>
-        
-        <!-- GAME CARD 12: Animal Feed -->
-        <a href="animalfeed/" class="game-card">
-            <img src="images/animalfeedtitlecard.png" alt="Feed the Animals game">
-        </a>
-
-        <!-- GAME CARD 13: Safari Match -->
-        <a href="animalmatch/" class="game-card">
-            <img src="images/safarimatchtitlecard.png" alt="Safari Match game">
-        </a>
-
-         <!-- GAME CARD 14: Weather Balloons -->
-        <a href="weatherballoons/" class="game-card">
-            <img src="images/weatherballoonstitlecard.png" alt="Weather Balloons game">
-        </a>
-
-         <!-- GAME CARD 15: transport stamp -->
-        <a href="transportstamp/" class="game-card">
-            <img src="images/transportstamptitlecard.png" alt="Transport Stamp game">
-        </a>
-
-        <!-- GAME CARD 16: animal stamp -->
-        <a href="animalstamp/" class="game-card">
-            <img src="images/animalstamptitlecard.png" alt="Animal Stamp game">
-        </a>
-
-        <!-- GAME CARD 17: minibeast whack -->
-        <a href="minibeastwhack/" class="game-card">
-            <img src="images/minibeasttitlecard.png" alt="Minibeast Whack Game">
-        </a>
-
-        
-        <!-- GAME CARD 18: school bag -->
-        <a href="school_bag/" class="game-card">
-            <img src="images/school_bag.png" alt="School Bag Game">
-        </a>
-
-        <!-- GAME CARD 19: feelings -->
-        <a href="feelings/" class="game-card">
-            <img src="images/feel.png" alt="Feelings Sentence Game">
-        </a>
-
-        <!-- GAME CARD 20: hot and cold -->
-        <a href="hotorcold/" class="game-card">
-            <img src="images/hotcold.png" alt="Hot or Cold Game">
-        </a>
-
-        <!-- GAME CARD 21: shape sort -->
-        <a href="shapesort" class="game-card">
-            <img src="images/shapesorttitle.png" alt="shape sort Game">
-        </a>
-
-         <!-- GAME CARD 22: Maze Rescue -->
-        <a href="mazerescue/" class="game-card">
-            <img src="images/mazerescuetitle.png" alt="Maze Rescue">
-        </a>
-
-        <!-- GAME CARD 23: Colour Time 1-->
-        <a href="colourtime1/" class="game-card">
-            <img src="images/colourtime1.png" alt="Colour Time 1">
-        </a>
-
-        <!-- GAME CARD 24: Colour Time 2-->
-        <a href="colourtime2/" class="game-card">
-            <img src="images/colourtime2.png" alt="Colour Time 2">
-        </a>
-
-        <!-- GAME CARD 25: Colour Time 3-->
-        <a href="colourtime3/" class="game-card">
-            <img src="images/colourtime3.png" alt="Colour Time 3">
-        </a>
-
-        <!-- GAME CARD 26: Pattern Game-->
-        <a href="patterngame/" class="game-card">
-            <img src="images/patterngametitle.png" alt="Pattern Game">
-        </a>
-
-        <!-- GAME CARD 27: Build Image 1 -->
-        <a href="buildgame1/" class="game-card">
-            <img src="images/build1.png" alt="Build an Image Game 1">
-        </a>
-
-        <!-- GAME CARD 28: Build Image 2 -->
-        <a href="buildgame2/" class="game-card">
-            <img src="images/build2.png" alt="Build an Image Game 2">
-        </a>
-
-        <!-- GAME CARD 29: Build Image 3 -->
-        <a href="buildgame3/" class="game-card">
-            <img src="images/build3.png" alt="Build an Image Game 3">
-        </a>
-
-        <!-- GAME CARD 30: Catch Star -->
-        <a href="catchthestar" class="game-card">
-            <img src="images/catchstartitle.png" alt="Build an Image Game 3">
-        </a>
+        <!-- PREMIUM GAMES (21 TO 30) -->
+        <a href="colourchoose/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/colourchoosetitle.png" alt="colour choose game"></a>
+        <a href="animalfeed/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/animalfeedtitlecard.png" alt="Feed the Animals game"></a>
+        <a href="weatherballoons/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/weatherballoonstitlecard.png" alt="Weather Balloons game"></a>
+        <a href="transportstamp/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/transportstamptitlecard.png" alt="Transport Stamp game"></a>
+        <a href="colourtime2/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/colourtime2.png" alt="Colour Time 2"></a>
+        <a href="colourtime3/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/colourtime3.png" alt="Colour Time 3"></a>
+        <a href="patterngame/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/patterngametitle.png" alt="Pattern Game"></a>
+        <a href="buildgame2/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/build2.png" alt="Build an Image Game 2"></a>
+        <a href="buildgame3/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/build3.png" alt="Build an Image Game 3"></a>
+        <a href="catchthestar" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/catchstartitle.png" alt="Catch Star Game"></a>
     </div>
 
     <footer>
         <p>© DoneNowPlay — Simple, calm symbol games for visual learners.</p>
     </footer>
 
-   <!-- SUPABASE CONNECTION & AUTH LOGIC SCRIPT -->
+<!-- SUPABASE & ACCESS GATING SCRIPT -->
 <script>
-    // 1. Initialize Supabase safely (only once)
     const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
-    
-    // We check if it's already initialized to prevent duplicate declarations
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const STRIPE_PAYMENT_LINK = 'YOUR_STRIPE_PAYMENT_LINK_HERE'; // Replace with your Stripe payment link
 
-    // Check if user is already logged in on page load
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let currentUserSession = null;
+    let userIsPremium = false;
+
     async function checkUserSession() {
         const { data: { session } } = await supabaseClient.auth.getSession();
+        currentUserSession = session;
+
         if (session) {
             document.getElementById('logged-out-view').style.display = 'none';
             document.getElementById('logged-in-view').style.display = 'flex';
             document.getElementById('user-email-display').textContent = session.user.email;
+
+            // Check if user has premium status in Supabase profiles table
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('is_premium')
+                .eq('id', session.user.id)
+                .single();
+
+            if (data && data.is_premium) {
+                userIsPremium = true;
+            }
         }
     }
 
-    // Prompt for Sign Up
+    // Intercept game card clicks to enforce paywall
+    document.addEventListener('click', async function(e) {
+        const card = e.target.closest('.game-card');
+        if (!card) return;
+
+        const isPremiumGame = card.getAttribute('data-premium') === 'true';
+
+        if (isPremiumGame && !userIsPremium) {
+            e.preventDefault(); // Stop them from opening the game
+
+            if (!currentUserSession) {
+                alert("This is a Premium Game! Please sign in or create an account to unlock all games.");
+                promptSignIn();
+            } else {
+                const upgrade = confirm("This game requires the DoneNowPlay Full Access Pass. Would you like to unlock all games now?");
+                if (upgrade) {
+                    window.location.href = STRIPE_PAYMENT_LINK;
+                }
+            }
+        }
+    });
+
     async function promptSignUp() {
         const email = prompt("Enter your email to sign up:");
         if (!email) return;
         const password = prompt("Enter a password (at least 6 characters):");
         if (!password) return;
 
-        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        const { error } = await supabaseClient.auth.signUp({ email, password });
         if (error) {
             alert("Sign up error: " + error.message);
         } else {
-            alert("Account created successfully! You can now sign in.");
+            alert("Account created successfully! Please check your email to verify, then sign in.");
         }
     }
 
-    // Prompt for Sign In
     async function promptSignIn() {
         const email = prompt("Enter your email:");
         if (!email) return;
         const password = prompt("Enter your password:");
         if (!password) return;
 
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
             alert("Login failed: " + error.message);
         } else {
@@ -389,14 +302,12 @@
         }
     }
 
-    // Handle Sign Out
     async function handleSignOut() {
         await supabaseClient.auth.signOut();
         alert("Signed out successfully.");
         location.reload();
     }
 
-    // Run session check when page loads
     window.addEventListener('DOMContentLoaded', checkUserSession);
 </script>
 
