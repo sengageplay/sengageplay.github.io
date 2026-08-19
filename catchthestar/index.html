@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starry Surprise - DoneNowPlay</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #02040a; /* Deep space black/blue */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .sky {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Tiny distant background stars */
+        .distant-star {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Game container that moves and bounces around the screen */
+        .stage {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            will-change: left, top;
+        }
+
+        /* One single large, inviting star in a muted shade of yellow */
+        .main-star {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            background-color: #f7ecb5; /* Muted warm yellow */
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 0 30px rgba(247, 236, 181, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.8);
+            animation: gentle-pulse 2.5s ease-in-out infinite;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        /* The pleasant reward reveal */
+        .reward {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.2);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .reward img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.7));
+        }
+
+        /* Popped state for the star */
+        .main-star.popped {
+            transform: scale(2.2) rotate(180deg);
+            opacity: 0;
+        }
+
+        /* Revealed state for the reward */
+        .reward.show {
+            opacity: 1;
+            transform: scale(1.15);
+        }
+
+        /* Gentle breathing animation for the star */
+        @keyframes gentle-pulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.06);
+                filter: brightness(1.12);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sky" id="sky-container">
+        <!-- Stage holds the active interaction piece -->
+        <div class="stage" id="game-stage"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const skyContainer = document.getElementById('sky-container');
+            const gameStage = document.getElementById('game-stage');
+
+            // 1. Generate distant background stars
+            const numberOfDistantStars = 70;
+            for (let i = 0; i < numberOfDistantStars; i++) {
+                const dStar = document.createElement('div');
+                dStar.className = 'distant-star';
+                const size = Math.random() * 2.5 + 1;
+                dStar.style.width = `${size}px`;
+                dStar.style.height = `${size}px`;
+                dStar.style.left = `${Math.random() * 100}vw`;
+                dStar.style.top = `${Math.random() * 100}vh`;
+                dStar.style.opacity = Math.random() * 0.7 + 0.2;
+                skyContainer.appendChild(dStar);
+            }
+
+            // 2. Your 11 pleasant images (matching your Colab filenames)
+            const items = [
+                "heart.png",
+                "rainbow.png",
+                "chocolate_bar.png",
+                "smiley_face.png",
+                "flower.png",
+                "sunshine.png",
+                "butterfly.png",
+                "starfish.png",
+                "balloon.png",
+                "cupcake.png",
+                "moon.png"
+            ];
+
+            let currentIndex = 0;
+            let animationFrameId = null;
+
+            // 3. Spawn and animate a single wandering star with a bit more energy
+            function spawnNextStar() {
+                // Clear previous elements inside stage
+                gameStage.innerHTML = '';
+
+                // Get current filename
+                const filename = items[currentIndex];
+
+                // Create Star element
+                const star = document.createElement('div');
+                star.className = 'main-star';
+
+                // Create Reward element
+                const reward = document.createElement('div');
+                reward.className = 'reward';
+
+                const img = document.createElement('img');
+                img.src = filename;
+                img.alt = "Surprise Reward";
+                reward.appendChild(img);
+
+                gameStage.appendChild(star);
+                gameStage.appendChild(reward);
+
+                // --- Faster, Livelier Bouncing Physics Setup ---
+                const stageSize = 160;
+                let posX = Math.random() * (window.innerWidth - stageSize);
+                let posY = Math.random() * (window.innerHeight - stageSize);
+
+                // Increased velocity multiplier for a quicker, more playful drift
+                let vx = (Math.random() - 0.5) * 3.2;
+                let vy = (Math.random() - 0.5) * 3.2;
+                
+                // Ensure a healthy minimum speed so it never feels sluggish
+                if (Math.abs(vx) < 1.4) vx = vx < 0 ? -1.4 : 1.4;
+                if (Math.abs(vy) < 1.4) vy = vy < 0 ? -1.4 : 1.4;
+
+                let isInteracted = false;
+
+                // Movement loop
+                function updatePosition() {
+                    if (isInteracted) return;
+
+                    posX += vx;
+                    posY += vy;
+
+                    // Bounce off left or right perimeter
+                    if (posX <= 0) {
+                        posX = 0;
+                        vx = -vx;
+                    } else if (posX >= window.innerWidth - stageSize) {
+                        posX = window.innerWidth - stageSize;
+                        vx = -vx;
+                    }
+
+                    // Bounce off top or bottom perimeter
+                    if (posY <= 0) {
+                        posY = 0;
+                        vy = -vy;
+                    } else if (posY >= window.innerHeight - stageSize) {
+                        posY = window.innerHeight - stageSize;
+                        vy = -vy;
+                    }
+
+                    gameStage.style.left = `${posX}px`;
+                    gameStage.style.top = `${posY}px`;
+
+                    animationFrameId = requestAnimationFrame(updatePosition);
+                }
+
+                // Start the motion loop
+                cancelAnimationFrame(animationFrameId);
+                updatePosition();
+
+                // Handle interaction (Click or Touch)
+                const handleTrigger = (e) => {
+                    e.preventDefault();
+                    if (isInteracted) return;
+                    isInteracted = true;
+
+                    // Trigger pop & reveal animations
+                    star.classList.add('popped');
+                    reward.classList.add('show');
+
+                    // After showing reward for 2 seconds, advance to next item
+                    setTimeout(() => {
+                        currentIndex = (currentIndex + 1) % items.length;
+                        spawnNextStar();
+                    }, 2000);
+                };
+
+                star.addEventListener('mousedown', handleTrigger);
+                star.addEventListener('touchstart', handleTrigger);
+            }
+
+            // Launch the first wandering star
+            spawnNextStar();
+        });
+    </script>
+</body>
+</html>
