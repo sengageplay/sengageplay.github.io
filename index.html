@@ -226,7 +226,7 @@
 <script>
     const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
-    const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/6oU14oc3rg51evg5TXejK00'; // Replace with your Stripe payment link
+    const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/6oU14oc3rg51evg5TXejK00'; 
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let currentUserSession = null;
@@ -241,11 +241,11 @@
             document.getElementById('logged-in-view').style.display = 'flex';
             document.getElementById('user-email-display').textContent = session.user.email;
 
-            // Check if user has premium status in Supabase profiles table
+            // Check if user has premium status in is_premium table using email
             const { data, error } = await supabaseClient
-                .from('profiles')
+                .from('is_premium')
                 .select('is_premium')
-                .eq('id', session.user.id)
+                .eq('email', session.user.email)
                 .single();
 
             if (data && data.is_premium) {
