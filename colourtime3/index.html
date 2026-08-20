@@ -4,6 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Color Match Game - Version 3</title>
+
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Premium Security Guard Script -->
+  <script>
+      const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
+
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      async function guardPremiumGame() {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          
+          if (!session) {
+              alert("Please sign in to play this premium game!");
+              window.location.href = "../index.html";
+              return;
+          }
+
+          const { data, error } = await supabaseClient
+              .from('is_premium')
+              .select('is_premium')
+              .eq('email', session.user.email)
+              .single();
+
+          if (!data || !data.is_premium) {
+              alert("This game requires the DoneNowPlay Full Access Pass!");
+              window.location.href = "../index.html";
+          }
+      }
+
+      guardPremiumGame();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -211,14 +246,14 @@
 
   <script>
     const YOUR_COLORS = [
-      { name: 'red',         hex: '#D80000', png: 'red.png' },
-      { name: 'orange',      hex: '#E07D00', png: 'orange.png' },
-      { name: 'yellow',      hex: '#F0E000', png: 'yellow.png' },
+      { name: 'red',       hex: '#D80000', png: 'red.png' },
+      { name: 'orange',     hex: '#E07D00', png: 'orange.png' },
+      { name: 'yellow',     hex: '#F0E000', png: 'yellow.png' },
       { name: 'light_green', hex: '#A8F768', png: 'light_green.png' },
-      { name: 'green',        hex: '#0F8214', png: 'green.png' },
+      { name: 'green',       hex: '#0F8214', png: 'green.png' },
       { name: 'light_blue',  hex: '#00A89E', png: 'light_blue.png' },
       { name: 'blue',        hex: '#083D9F', png: 'blue.png' },
-      { name: 'purple',      hex: '#71007F', png: 'purple.png' },
+      { name: 'purple',     hex: '#71007F', png: 'purple.png' },
       { name: 'pink',        hex: '#C03667', png: 'pink.png' },
       { name: 'brown',       hex: '#8D5F2E', png: 'brown.png' },
       { name: 'grey',        hex: '#7F8182', png: 'grey.png' },
@@ -277,15 +312,15 @@
         title: 'Level 4: Hot Air Balloon',
         bg: '#EBF8FF',
         segments: [
-          { id: 'sky_bg',       targetColor: 'light_blue',  type: 'path', path: 'M 0 0 L 450 0 L 450 330 L 0 330 Z' },
-          { id: 'sun_disk',     targetColor: 'yellow',      type: 'circle', cx: 70, cy: 70, r: 35 },
-          { id: 'hill_back',    targetColor: 'light_green', type: 'path', path: 'M 0 330 Q 150 280 300 340 L 450 320 L 450 450 L 0 450 Z' },
-          { id: 'hill_front',   targetColor: 'green',       type: 'path', path: 'M 0 370 Q 200 320 450 360 L 450 450 L 0 450 Z' },
-          { id: 'balloon_left', targetColor: 'red',         type: 'path', path: 'M 225 40 C 130 40 140 180 195 220 L 225 220 Z' },
-          { id: 'balloon_mid',  targetColor: 'orange',      type: 'path', path: 'M 225 40 C 180 40 185 180 210 220 L 240 220 C 265 180 270 40 225 40 Z' },
-          { id: 'balloon_right',targetColor: 'yellow',      type: 'path', path: 'M 225 40 C 320 40 310 180 255 220 L 225 220 Z' },
-          { id: 'basket_rope',  targetColor: 'black',       type: 'path', path: 'M 195 220 L 205 260 L 245 260 L 255 220 Z' },
-          { id: 'basket_box',   targetColor: 'brown',       type: 'rect', x: 200, y: 260, width: 50, height: 40 }
+          { id: 'sky_bg',        targetColor: 'light_blue',  type: 'path', path: 'M 0 0 L 450 0 L 450 330 L 0 330 Z' },
+          { id: 'sun_disk',      targetColor: 'yellow',      type: 'circle', cx: 70, cy: 70, r: 35 },
+          { id: 'hill_back',     targetColor: 'light_green', type: 'path', path: 'M 0 330 Q 150 280 300 340 L 450 320 L 450 450 L 0 450 Z' },
+          { id: 'hill_front',    targetColor: 'green',       type: 'path', path: 'M 0 370 Q 200 320 450 360 L 450 450 L 0 450 Z' },
+          { id: 'balloon_left',  targetColor: 'red',         type: 'path', path: 'M 225 40 C 130 40 140 180 195 220 L 225 220 Z' },
+          { id: 'balloon_mid',   targetColor: 'orange',      type: 'path', path: 'M 225 40 C 180 40 185 180 210 220 L 240 220 C 265 180 270 40 225 40 Z' },
+          { id: 'balloon_right', targetColor: 'yellow',      type: 'path', path: 'M 225 40 C 320 40 310 180 255 220 L 225 220 Z' },
+          { id: 'basket_rope',   targetColor: 'black',       type: 'path', path: 'M 195 220 L 205 260 L 245 260 L 255 220 Z' },
+          { id: 'basket_box',    targetColor: 'brown',       type: 'rect', x: 200, y: 260, width: 50, height: 40 }
         ]
       },
       {
