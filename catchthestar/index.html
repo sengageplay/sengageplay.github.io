@@ -4,6 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Starry Surprise - DoneNowPlay</title>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Premium Security & Subscription Guard Script -->
+    <script>
+      const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
+      
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      async function checkAccessGuard() {
+        try {
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          
+          if (sessionError || !session) {
+              alert("Please sign in to play this premium game!");
+              window.location.href = "../index.html";
+              return;
+          }
+
+          const { data, error } = await supabaseClient
+              .from('is_premium')
+              .select('is_premium')
+              .eq('email', session.user.email)
+              .single();
+
+          if (!data || !data.is_premium) {
+              alert("This game requires the DoneNowPlay Full Access Pass!");
+              window.location.href = "../index.html";
+          }
+        } catch (err) {
+          console.error('Security Guard Error:', err);
+          window.location.href = "../index.html";
+        }
+      }
+
+      checkAccessGuard();
+    </script>
+
     <style>
         body, html {
             margin: 0;
@@ -130,7 +170,7 @@
                 skyContainer.appendChild(dStar);
             }
 
-            // 2. Your 11 pleasant images (matching your Colab filenames)
+            // 2. Your 11 pleasant images (matching your filenames)
             const items = [
                 "heart.png",
                 "rainbow.png",
