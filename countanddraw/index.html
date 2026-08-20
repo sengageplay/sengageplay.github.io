@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trace & Glow (Free Version) - DoneNowPlay</title>
+
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0b1329;
+      --card-bg: #1e293b;
+      --primary-color: #38bdf8;
+      --success-color: #4ade80;
+      --text-color: #f8fafc;
+      --border-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      gap: 16px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 48px;
+    }
+
+    .home-btn {
+      background-color: var(--primary-color);
+      color: #0b1329;
+      text-decoration: none;
+      padding: 8px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .level-badge {
+      background-color: var(--card-bg);
+      padding: 8px 16px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--primary-color);
+    }
+
+    .canvas-container {
+      position: relative;
+      width: min(70vh, 85vw);
+      height: min(70vh, 85vw);
+      max-width: 550px;
+      max-height: 550px;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 4px solid #334155;
+      border-radius: 24px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .waypoint-btn {
+      position: absolute;
+      width: 56px;
+      height: 56px;
+      transform: translate(-50%, -50%);
+      background-color: #ffffff;
+      border: 4px solid #cbd5e1;
+      border-radius: 50%;
+      cursor: pointer;
+      touch-action: manipulation;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+    }
+
+    .waypoint-btn img {
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .waypoint-btn.active {
+      border-color: var(--primary-color);
+      animation: pulse 1.5s infinite;
+    }
+
+    .waypoint-btn.completed {
+      background-color: #dcfce7;
+      border-color: var(--success-color);
+      transform: translate(-50%, -50%) scale(0.9);
+      opacity: 0.8;
+    }
+
+    .waypoint-btn.target-close {
+      border-color: #facc15;
+      animation: pulse-target 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.6); }
+      70% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 0 14px rgba(56, 189, 248, 0); }
+      100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+
+    @keyframes pulse-target {
+      0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.8); }
+      70% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 0 16px rgba(250, 204, 21, 0); }
+      100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+    }
+
+    .center-reward {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120px;
+      height: 120px;
+      transform: translate(-50%, -50%) scale(0);
+      z-index: 2;
+      opacity: 0;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+    }
+
+    .center-reward img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 20px rgba(74, 222, 128, 0.8));
+    }
+
+    .center-reward.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="../" class="home-btn">🏠 Main Menu</a>
+    <div class="level-badge" id="level-indicator">Level 1</div>
+  </header>
+
+  <div class="canvas-container" id="canvas-container">
+    <canvas id="drawing-canvas"></canvas>
+    <div id="center-reward" class="center-reward">
+      <img id="reward-img" src="" alt="Shape Reward">
+    </div>
+    <div id="waypoints-layer"></div>
+  </div>
+
+  <script>
+    const levels = [
+      {
+        levelNum: 1,
+        name: "Triangle",
+        dots: [
+          { x: 50, y: 20 },
+          { x: 20, y: 80 },
+          { x: 80, y: 80 }
+        ],
+        rewardIcon: "triangle.png"
+      },
+      {
+        levelNum: 2,
+        name: "Square",
+        dots: [
+          { x: 25, y: 25 },
+          { x: 75, y: 25 },
+          { x: 75, y: 75 },
+          { x: 25, y: 75 }
+        ],
+        rewardIcon: "square.png"
+      },
+      {
+        levelNum: 3,
+        name: "House",
+        dots: [
+          { x: 50, y: 15 }, // Roof top (1)
+          { x: 80, y: 45 }, // Roof right (2)
+          { x: 80, y: 85 }, // Bottom right (3)
+          { x: 20, y: 85 }, // Bottom left (4)
+          { x: 20, y: 45 }  // Roof left (5)
+        ],
+        rewardIcon: "house.png",
+        hasHouseArt: true
+      },
+      {
+        levelNum: 4,
+        name: "Kite",
+        dots: [
+          { x: 50, y: 15 }, // Top point
+          { x: 75, y: 45 }, // Right point
+          { x: 50, y: 80 }, // Bottom point
+          { x: 25, y: 45 }  // Left point
+        ],
+        rewardIcon: "kite.png",
+        hasKiteArt: true
+      },
+      {
+        levelNum: 5,
+        name: "Star",
+        dots: [
+          { x: 50, y: 15 },
+          { x: 65, y: 40 },
+          { x: 90, y: 45 },
+          { x: 70, y: 65 },
+          { x: 75, y: 90 },
+          { x: 50, y: 75 },
+          { x: 25, y: 90 },
+          { x: 30, y: 65 },
+          { x: 10, y: 45 },
+          { x: 35, y: 40 }
+        ],
+        rewardIcon: "star.png"
+      },
+      {
+        levelNum: 6,
+        name: "Rocket",
+        dots: [
+          { x: 50, y: 10 },
+          { x: 70, y: 35 },
+          { x: 70, y: 70 },
+          { x: 85, y: 85 },
+          { x: 50, y: 75 },
+          { x: 15, y: 85 },
+          { x: 30, y: 70 },
+          { x: 30, y: 35 }
+        ],
+        rewardIcon: "rocket.png"
+      }
+    ];
+
+    let currentLevelIndex = 0;
+    let expectedNextStep = 1;
+    let drawnLines = [];
+    let isLevelComplete = false;
+    let waitingForFinalClosure = false;
+
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    const waypointsLayer = document.getElementById('waypoints-layer');
+    const levelIndicator = document.getElementById('level-indicator');
+    const centerReward = document.getElementById('center-reward');
+    const rewardImg = document.getElementById('reward-img');
+    const container = document.getElementById('canvas-container');
+
+    function initLevel() {
+      isLevelComplete = false;
+      waitingForFinalClosure = false;
+      expectedNextStep = 1;
+      drawnLines = [];
+      centerReward.classList.remove('show');
+      
+      const level = levels[currentLevelIndex];
+      levelIndicator.textContent = `Level ${level.levelNum}: ${level.name} (${level.dots.length} Dots)`;
+      rewardImg.src = level.rewardIcon;
+
+      resizeCanvas();
+      renderWaypoints();
+      redrawCanvas();
+    }
+
+    function resizeCanvas() {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+
+    function renderWaypoints() {
+      waypointsLayer.innerHTML = '';
+      const level = levels[currentLevelIndex];
+
+      level.dots.forEach((dot, index) => {
+        const stepNum = index + 1;
+        const btn = document.createElement('button');
+        btn.className = `waypoint-btn ${stepNum === 1 ? 'active' : ''}`;
+        btn.style.left = `${dot.x}%`;
+        btn.style.top = `${dot.y}%`;
+        btn.dataset.step = stepNum;
+
+        const img = document.createElement('img');
+        img.src = `${stepNum}.png`;
+        img.alt = `Dot ${stepNum}`;
+        btn.appendChild(img);
+
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (!isLevelComplete) {
+            handleWaypointClick(stepNum, dot);
+          }
+        });
+
+        waypointsLayer.appendChild(btn);
+      });
+    }
+
+    function handleWaypointClick(stepNum, dot) {
+      const totalDots = levels[currentLevelIndex].dots.length;
+
+      if (stepNum === expectedNextStep && !waitingForFinalClosure) {
+        if (expectedNextStep > 1) {
+          const prevDot = levels[currentLevelIndex].dots[expectedNextStep - 2];
+          drawnLines.push({ from: prevDot, to: dot });
+          redrawCanvas();
+        }
+
+        const currentBtn = waypointsLayer.querySelector(`[data-step="${stepNum}"]`);
+        currentBtn.classList.remove('active');
+        currentBtn.classList.add('completed');
+
+        expectedNextStep++;
+
+        const nextBtnElement = waypointsLayer.querySelector(`[data-step="${expectedNextStep}"]`);
+        if (nextBtnElement) {
+          nextBtnElement.classList.add('active');
+        } else {
+          waitingForFinalClosure = true;
+          const firstBtn = waypointsLayer.querySelector('[data-step="1"]');
+          firstBtn.classList.remove('completed');
+          firstBtn.classList.add('target-close');
+        }
+      } 
+      else if (waitingForFinalClosure && stepNum === 1) {
+        const lastDot = levels[currentLevelIndex].dots[totalDots - 1];
+        const firstDot = levels[currentLevelIndex].dots[0];
+
+        drawnLines.push({ from: lastDot, to: firstDot });
+        redrawCanvas();
+
+        const firstBtn = waypointsLayer.querySelector('[data-step="1"]');
+        firstBtn.classList.remove('target-close');
+        firstBtn.classList.add('completed');
+
+        isLevelComplete = true;
+        triggerWinState();
+      }
+    }
+
+    function redrawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const level = levels[currentLevelIndex];
+
+      // Draw background art & subtle grey structural guides
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]); // Dashed grey line for guides
+
+      if (level.hasHouseArt) {
+        // Roof dividing line (between dot 2 and dot 5)
+        const dot2 = level.dots[1];
+        const dot5 = level.dots[4];
+        ctx.beginPath();
+        ctx.moveTo((dot2.x / 100) * canvas.width, (dot2.y / 100) * canvas.height);
+        ctx.lineTo((dot5.x / 100) * canvas.width, (dot5.y / 100) * canvas.height);
+        ctx.stroke();
+
+        // Solid fills for door and windows
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect((42 / 100) * canvas.width, (65 / 100) * canvas.height, (16 / 100) * canvas.width, (20 / 100) * canvas.height);
+        ctx.fillRect((30 / 100) * canvas.width, (52 / 100) * canvas.height, (12 / 100) * canvas.width, (12 / 100) * canvas.height);
+        ctx.fillRect((58 / 100) * canvas.width, (52 / 100) * canvas.height, (12 / 100) * canvas.width, (12 / 100) * canvas.height);
+      }
+
+      if (level.hasKiteArt) {
+        // Kite cross frame (Top to bottom, Left to right)
+        const d1 = level.dots[0];
+        const d3 = level.dots[2];
+        const d2 = level.dots[1];
+        const d4 = level.dots[3];
+
+        ctx.beginPath();
+        ctx.moveTo((d1.x / 100) * canvas.width, (d1.y / 100) * canvas.height);
+        ctx.lineTo((d3.x / 100) * canvas.width, (d3.y / 100) * canvas.height);
+        ctx.moveTo((d2.x / 100) * canvas.width, (d2.y / 100) * canvas.height);
+        ctx.lineTo((d4.x / 100) * canvas.width, (d4.y / 100) * canvas.height);
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]); // Reset line dash for active user lines
+
+      // Draw user connecting lines
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+
+      drawnLines.forEach(line => {
+        const startX = (line.from.x / 100) * canvas.width;
+        const startY = (line.from.y / 100) * canvas.height;
+        const endX = (line.to.x / 100) * canvas.width;
+        const endY = (line.to.y / 100) * canvas.height;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      });
+    }
+
+    function triggerWinState() {
+      centerReward.classList.add('show');
+
+      confetti({
+        particleCount: 90,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+
+      setTimeout(() => {
+        currentLevelIndex++;
+        if (currentLevelIndex >= levels.length) {
+          currentLevelIndex = 0;
+        }
+        initLevel();
+      }, 2800);
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      redrawCanvas();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initLevel();
+    });
+  </script>
+</body>
+</html>
