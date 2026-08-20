@@ -10,43 +10,38 @@
 
   <!-- Premium Security & Subscription Guard Script -->
   <script>
-    // Replace these with your actual Supabase project credentials
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+      const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
     
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function checkAccessGuard() {
-      try {
-        // 1. Check if user is logged in
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-        
-        if (sessionError || !session) {
-          // Redirect to login page if unauthenticated
-          window.location.href = '/login.html';
-          return;
+      async function checkAccessGuard() {
+        try {
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          
+          if (sessionError || !session) {
+              alert("Please sign in to play this premium game!");
+              window.location.href = "../index.html";
+              return;
+          }
+
+          const { data, error } = await supabaseClient
+              .from('is_premium')
+              .select('is_premium')
+              .eq('email', session.user.email)
+              .single();
+
+          if (!data || !data.is_premium) {
+              alert("This game requires the DoneNowPlay Full Access Pass!");
+              window.location.href = "../index.html";
+          }
+        } catch (err) {
+          console.error('Security Guard Error:', err);
+          window.location.href = "../index.html";
         }
-
-        // 2. Check active subscription status in user profiles or subscriptions table
-        const { data: profile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('is_subscribed, subscription_status')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError || !profile || (!profile.is_subscribed && profile.subscription_status !== 'active')) {
-          // Redirect to subscription or pricing page if premium check fails
-          window.location.href = '/subscribe.html';
-          return;
-        }
-      } catch (err) {
-        console.error('Security Guard Error:', err);
-        window.location.href = '/login.html';
       }
-    }
 
-    // Run security check immediately on head load
-    checkAccessGuard();
+      checkAccessGuard();
   </script>
 
   <style>
@@ -59,7 +54,6 @@
       --text: #2c3e50;
       --border-radius: 20px;
       
-      /* INCREASED CARD & TRAY SIZES FOR BETTER VISIBILITY */
       --card-size: clamp(80px, 12vw, 150px);
       --tray-size: clamp(85px, 13vw, 160px);
     }
@@ -126,7 +120,6 @@
       color: #555;
     }
 
-    /* Pattern Sequence Row - Wraps smoothly onto multiple rows */
     .pattern-board {
       display: flex;
       flex-wrap: wrap;
@@ -163,7 +156,6 @@
       pointer-events: none;
     }
 
-    /* Blank slots with Question Marks */
     .symbol-card.empty {
       border: 4px dashed #a0aec0;
       background-color: #edf2f7;
@@ -190,12 +182,10 @@
       border: 4px solid var(--primary);
     }
 
-    /* ONLY the newly placed symbol pops/animates */
     .symbol-card.just-placed {
       animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* Selection Tray */
     .tray-container {
       margin-top: 10px;
     }
@@ -339,17 +329,12 @@
   }
 
   const levels = [
-    /* --- Stage 1: AB Patterns --- */
     { pattern: buildPattern(['1.png', '2.png'], 5), options: ['1.png', '2.png'] },
     { pattern: buildPattern(['3.png', '4.png'], 5), options: ['3.png', '4.png'] },
     { pattern: buildPattern(['5.png', '6.png'], 5), options: ['5.png', '6.png'] },
-
-    /* --- Stage 2: ABB Patterns --- */
     { pattern: buildPattern(['7.png', '8.png', '8.png'], 3), options: ['7.png', '8.png'] },
     { pattern: buildPattern(['9.png', '10.png', '10.png'], 3), options: ['9.png', '10.png'] },
     { pattern: buildPattern(['11.png', '12.png', '12.png'], 3), options: ['11.png', '12.png'] },
-
-    /* --- Stage 3: ABC Patterns --- */
     { pattern: buildPattern(['13.png', '14.png', '15.png'], 3), options: ['13.png', '14.png', '15.png'] },
     { pattern: buildPattern(['16.png', '17.png', '18.png'], 3), options: ['16.png', '17.png', '18.png'] },
     { pattern: buildPattern(['19.png', '20.png', '21.png'], 3), options: ['19.png', '20.png', '21.png'] }
@@ -487,65 +472,26 @@
   }
 
   function handlePatternComplete() {
-    const stage = Math.floor(currentLevelIdx / 3) + 1;
-    const isStageEnd = (currentLevelIdx + 1) % 3 === 0;
-    const isGameEnd = (currentLevelIdx === levels.length - 1);
-
-    let message = 'Fantastic! Pattern Complete!';
-    
-    if (isGameEnd) {
-      message = '🌟 AMAZING! You completed the whole game!';
-      launchConfetti();
-      document.getElementById('restart-btn').style.display = 'inline-block';
-    } else if (isStageEnd) {
-      message = `🎉 Excellent! You finished Stage ${stage}!`;
-      launchConfetti();
-    }
-
     const msg = document.getElementById('message-overlay');
-    msg.innerText = message;
+    msg.innerText = 'Fantastic Job!';
     msg.className = 'message-overlay success-text';
 
-    // AUTOMATIC ADVANCEMENT TO NEXT LEVEL AFTER 1.5 SECONDS
-    if (!isGameEnd) {
-      setTimeout(() => {
-        nextLevel();
-      }, 1500);
-    }
-  }
-
-  function nextLevel() {
-    currentLevelIdx++;
-    loadLevel(currentLevelIdx);
+    setTimeout(() => {
+      if (currentLevelIdx < levels.length - 1) {
+        loadLevel(currentLevelIdx + 1);
+      } else {
+        msg.innerText = 'You Completed All Patterns!';
+        document.getElementById('restart-btn').style.display = 'inline-block';
+      }
+    }, 1500);
   }
 
   function restartGame() {
     loadLevel(0);
   }
 
-  function launchConfetti() {
-    const container = document.getElementById('confetti-container');
-    const colors = ['#4a90e2', '#e67e22', '#2ecc71', '#e74c3c', '#f1c40f'];
-    
-    for (let i = 0; i < 40; i++) {
-      const piece = document.createElement('div');
-      piece.classList.add('confetti');
-      
-      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      piece.style.left = (Math.random() * 100) + '%';
-      piece.style.top = '-20px';
-      piece.style.animationDuration = (2 + Math.random() * 3) + 's';
-      piece.style.animationDelay = (Math.random() * 0.5) + 's';
-      
-      container.appendChild(piece);
-      
-      setTimeout(() => piece.remove(), 5000);
-    }
-  }
-
-  // Initial load
+  // Initialize the game on load
   loadLevel(0);
 </script>
-
 </body>
 </html>
