@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Count & Draw (Premium) - DoneNowPlay</title>
+
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Premium Security Guard Script -->
+  <script>
+      const SUPABASE_URL = 'https://mvmlbbijfymqftzwyeiq.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bWxiYmlqZnltcWZ0end5ZWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTUwNjEsImV4cCI6MjEwMjczMTA2MX0.eSmeRnaIb8sJQVEcfV5UGm3Ag7TqBB1ZaOOJ2d-gDhg';
+
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      async function guardPremiumGame() {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          
+          if (!session) {
+              alert("Please sign in to play this premium game!");
+              window.location.href = "../index.html";
+              return;
+          }
+
+          const { data, error } = await supabaseClient
+              .from('is_premium')
+              .select('is_premium')
+              .eq('email', session.user.email)
+              .single();
+
+          if (!data || !data.is_premium) {
+              alert("This game requires the DoneNowPlay Full Access Pass!");
+              window.location.href = "../index.html";
+          }
+      }
+
+      guardPremiumGame();
+  </script>
+
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0b1329;
+      --card-bg: #1e293b;
+      --primary-color: #38bdf8;
+      --success-color: #4ade80;
+      --text-color: #f8fafc;
+      --border-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 48px;
+    }
+
+    .home-btn {
+      background-color: var(--primary-color);
+      color: #0b1329;
+      text-decoration: none;
+      padding: 8px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .level-badge {
+      background-color: var(--card-bg);
+      padding: 8px 16px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--primary-color);
+    }
+
+    .game-area {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 55px;
+    }
+
+    .top-reward {
+      position: absolute;
+      top: -125px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      width: 140px;
+      height: 140px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      opacity: 0;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    }
+
+    .top-reward img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+    }
+
+    .top-reward.show {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: min(65vh, 85vw);
+      height: min(65vh, 85vw);
+      max-width: 500px;
+      max-height: 500px;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 4px solid #334155;
+      border-radius: 24px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .waypoint-btn {
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      transform: translate(-50%, -50%);
+      background-color: #ffffff;
+      border: 4px solid #cbd5e1;
+      border-radius: 50%;
+      cursor: pointer;
+      touch-action: manipulation;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.2s, border-color 0.2s, background-color 0.2s, opacity 0.3s ease, visibility 0.3s ease;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .waypoint-btn img {
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .waypoint-btn.active {
+      border-color: var(--primary-color);
+      animation: pulse 1.5s infinite;
+    }
+
+    .waypoint-btn.completed {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .waypoint-btn.target-close {
+      border-color: #facc15;
+      animation: pulse-target 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.6); }
+      70% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 0 14px rgba(56, 189, 248, 0); }
+      100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+
+    @keyframes pulse-target {
+      0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.8); }
+      70% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 0 16px rgba(250, 204, 21, 0); }
+      100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="../" class="home-btn">🏠 Main Menu</a>
+    <div class="level-badge" id="level-indicator">Level 1</div>
+  </header>
+
+  <div class="game-area">
+    <div id="top-reward" class="top-reward">
+      <img id="reward-img" src="" alt="Reward">
+    </div>
+
+    <div class="canvas-container" id="canvas-container">
+      <canvas id="drawing-canvas"></canvas>
+      <div id="waypoints-layer"></div>
+    </div>
+  </div>
+
+  <script>
+    const levels = [
+      {
+        levelNum: 1,
+        name: "Cat",
+        type: "standard-loop",
+        dots: [
+          { x: 50, y: 80 }, { x: 35, y: 70 }, { x: 30, y: 45 },
+          { x: 25, y: 20 }, { x: 40, y: 35 }, { x: 60, y: 35 },
+          { x: 75, y: 20 }, { x: 70, y: 45 }, { x: 65, y: 70 }
+        ],
+        rewardIcon: "cat.png"
+      },
+      {
+        levelNum: 2,
+        name: "Robot Face",
+        type: "feature-reveal",
+        outlineCount: 4,
+        dots: [
+          { x: 30, y: 35 }, { x: 70, y: 35 }, 
+          { x: 70, y: 75 }, { x: 30, y: 75 }, 
+          { x: 43, y: 50 }, { x: 57, y: 50 }
+        ],
+        rewardIcon: "robot.png"
+      },
+      {
+        levelNum: 3,
+        name: "Gift Box",
+        type: "feature-reveal",
+        outlineCount: 4,
+        dots: [
+          { x: 30, y: 45 }, { x: 70, y: 45 }, 
+          { x: 70, y: 80 }, { x: 30, y: 80 }, 
+          { x: 50, y: 28 }
+        ],
+        rewardIcon: "gift.png"
+      },
+      {
+        levelNum: 4,
+        name: "Car",
+        type: "feature-reveal",
+        outlineCount: 8,
+        dots: [
+          { x: 25, y: 65 }, { x: 25, y: 45 }, { x: 35, y: 35 }, { x: 55, y: 35 },
+          { x: 65, y: 45 }, { x: 75, y: 45 }, { x: 75, y: 65 }, { x: 68, y: 65 },
+          { x: 38, y: 65 }, { x: 62, y: 65 }
+        ],
+        rewardIcon: "car.png"
+      }
+    ];
+
+    let currentLevelIndex = 0;
+    let expectedNextStep = 1;
+    let drawnLines = [];
+    let isLevelComplete = false;
+    let featureState = 0;
+    let awaitingLoopClosure = false;
+
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    const waypointsLayer = document.getElementById('waypoints-layer');
+    const levelIndicator = document.getElementById('level-indicator');
+    const topReward = document.getElementById('top-reward');
+    const rewardImg = document.getElementById('reward-img');
+    const container = document.getElementById('canvas-container');
+
+    function initLevel() {
+      isLevelComplete = false;
+      expectedNextStep = 1;
+      featureState = 0;
+      awaitingLoopClosure = false;
+      drawnLines = [];
+      topReward.classList.remove('show');
+      
+      const level = levels[currentLevelIndex];
+      levelIndicator.textContent = `Level ${level.levelNum}`;
+      rewardImg.src = level.rewardIcon;
+
+      resizeCanvas();
+      renderWaypoints();
+      redrawCanvas();
+    }
+
+    function resizeCanvas() {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+
+    function renderWaypoints() {
+      waypointsLayer.innerHTML = '';
+      const level = levels[currentLevelIndex];
+
+      level.dots.forEach((dot, index) => {
+        const stepNum = index + 1;
+        const btn = document.createElement('button');
+        btn.className = `waypoint-btn ${stepNum === 1 ? 'active' : ''}`;
+        btn.style.left = `${dot.x}%`;
+        btn.style.top = `${dot.y}%`;
+        btn.dataset.step = stepNum;
+
+        const img = document.createElement('img');
+        img.src = `${stepNum}.png`;
+        img.alt = `Dot ${stepNum}`;
+        btn.appendChild(img);
+
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (!isLevelComplete) {
+            handleWaypointClick(stepNum, dot);
+          }
+        });
+
+        waypointsLayer.appendChild(btn);
+      });
+    }
+
+    function handleWaypointClick(clickedStep, dot) {
+      const level = levels[currentLevelIndex];
+
+      if (level.type === 'standard-loop') {
+        if (!awaitingLoopClosure) {
+          if (clickedStep !== expectedNextStep) return;
+
+          const currentBtn = waypointsLayer.querySelector(`[data-step="${clickedStep}"]`);
+          currentBtn.classList.remove('active');
+          currentBtn.classList.add('completed');
+
+          expectedNextStep++;
+          if (expectedNextStep <= level.dots.length) {
+            const nextDot = level.dots[expectedNextStep - 1];
+            drawnLines.push({ from: dot, to: nextDot });
+            redrawCanvas();
+
+            waypointsLayer.querySelector(`[data-step="${expectedNextStep}"]`).classList.add('active');
+          } else {
+            awaitingLoopClosure = true;
+            const firstBtn = waypointsLayer.querySelector('[data-step="1"]');
+            firstBtn.classList.remove('completed');
+            firstBtn.classList.add('target-close');
+          }
+        } else {
+          if (clickedStep === 1) {
+            const lastDot = level.dots[level.dots.length - 1];
+            const firstDot = level.dots[0];
+            drawnLines.push({ from: lastDot, to: firstDot });
+            redrawCanvas();
+
+            waypointsLayer.querySelector('[data-step="1"]').classList.remove('target-close');
+            waypointsLayer.querySelector('[data-step="1"]').classList.add('completed');
+            isLevelComplete = true;
+            triggerWinState();
+          }
+        }
+      } 
+      else if (level.type === 'feature-reveal') {
+        if (clickedStep !== expectedNextStep) return;
+
+        const currentBtn = waypointsLayer.querySelector(`[data-step="${clickedStep}"]`);
+        currentBtn.classList.remove('active');
+        currentBtn.classList.add('completed');
+
+        if (expectedNextStep < level.outlineCount) {
+          const nextDot = level.dots[expectedNextStep];
+          drawnLines.push({ from: dot, to: nextDot });
+          redrawCanvas();
+
+          expectedNextStep++;
+          waypointsLayer.querySelector(`[data-step="${expectedNextStep}"]`).classList.add('active');
+        } 
+        else if (expectedNextStep === level.outlineCount) {
+          drawnLines.push({ from: level.dots[level.outlineCount - 1], to: level.dots[0] });
+          redrawCanvas();
+
+          expectedNextStep++;
+          const nextBtn = waypointsLayer.querySelector(`[data-step="${expectedNextStep}"]`);
+          if (nextBtn) nextBtn.classList.add('active');
+        } 
+        else {
+          featureState++;
+          redrawCanvas();
+
+          expectedNextStep++;
+          const nextBtn = waypointsLayer.querySelector(`[data-step="${expectedNextStep}"]`);
+          if (nextBtn) {
+            nextBtn.classList.add('active');
+          } else {
+            isLevelComplete = true;
+            triggerWinState();
+          }
+        }
+      }
+    }
+
+    function redrawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const level = levels[currentLevelIndex];
+
+      if (level.name === "Robot Face") {
+        ctx.save();
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 3;
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.fillRect(canvas.width * 0.3, canvas.height * 0.35, canvas.width * 0.4, canvas.height * 0.4);
+        ctx.strokeRect(canvas.width * 0.3, canvas.height * 0.35, canvas.width * 0.4, canvas.height * 0.4);
+        
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(canvas.width * 0.4, canvas.height * 0.62, canvas.width * 0.20, 10);
+
+        if (featureState >= 1) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(canvas.width * 0.43, canvas.height * 0.50, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (featureState >= 2) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(canvas.width * 0.57, canvas.height * 0.50, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      if (level.name === "Gift Box") {
+        ctx.save();
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 3;
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.fillRect(canvas.width * 0.3, canvas.height * 0.45, canvas.width * 0.4, canvas.height * 0.35);
+        ctx.strokeRect(canvas.width * 0.3, canvas.height * 0.45, canvas.width * 0.4, canvas.height * 0.35);
+
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * 0.5, canvas.height * 0.45);
+        ctx.lineTo(canvas.width * 0.5, canvas.height * 0.8);
+        ctx.moveTo(canvas.width * 0.3, canvas.height * 0.62);
+        ctx.lineTo(canvas.width * 0.7, canvas.height * 0.62);
+        ctx.stroke();
+
+        if (featureState >= 1) {
+          ctx.fillStyle = '#f43f5e';
+          ctx.beginPath();
+          ctx.arc(canvas.width * 0.5, canvas.height * 0.38, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#881337';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      if (level.name === "Car") {
+        ctx.save();
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 4;
+
+        if (featureState >= 1) {
+          ctx.beginPath();
+          ctx.arc(canvas.width * 0.38, canvas.height * 0.65, 20, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (featureState >= 2) {
+          ctx.beginPath();
+          ctx.arc(canvas.width * 0.62, canvas.height * 0.65, 20, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+
+      drawnLines.forEach(line => {
+        const startX = (line.from.x / 100) * canvas.width;
+        const startY = (line.from.y / 100) * canvas.height;
+        const endX = (line.to.x / 100) * canvas.width;
+        const endY = (line.to.y / 100) * canvas.height;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      });
+    }
+
+    function triggerWinState() {
+      topReward.classList.add('show');
+      confetti({ particleCount: 110, spread: 85, origin: { y: 0.5 } });
+
+      setTimeout(() => {
+        currentLevelIndex = (currentLevelIndex + 1) % levels.length;
+        initLevel();
+      }, 2800);
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      redrawCanvas();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initLevel();
+    });
+  </script>
+</body>
+</html>
