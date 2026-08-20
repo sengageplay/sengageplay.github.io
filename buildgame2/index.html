@@ -4,6 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Build an Image Game</title>
+  
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Premium Security & Subscription Guard Script -->
+  <script>
+    // Replace these with your actual Supabase project credentials
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkAccessGuard() {
+      try {
+        // 1. Check if user is logged in
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+        
+        if (sessionError || !session) {
+          // Redirect to login page if unauthenticated
+          window.location.href = '/login.html';
+          return;
+        }
+
+        // 2. Check active subscription status in user profiles or subscriptions table
+        const { data: profile, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('is_subscribed, subscription_status')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile || (!profile.is_subscribed && profile.subscription_status !== 'active')) {
+          // Redirect to subscription or pricing page if premium check fails
+          window.location.href = '/subscribe.html';
+          return;
+        }
+      } catch (err) {
+        console.error('Security Guard Error:', err);
+        window.location.href = '/login.html';
+      }
+    }
+
+    // Run security check immediately on head load
+    checkAccessGuard();
+  </script>
+
   <style>
     :root {
       --bg-color: #f0f4f8;
