@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remember the Symbols</title>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2vw;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin-bottom: 1vh;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+        }
+
+        #progress-indicator {
+            font-size: clamp(1rem, 2.5vw, 1.8rem);
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 2vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 16 / 10;
+            min-height: 450px;
+            background-color: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 4px solid #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3vw;
+            box-sizing: border-box;
+        }
+
+        /* Container for custom 'remember' icon + label text */
+        #instruction-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2vh;
+        }
+
+        /* Enlarged instruction icon */
+        #instruction-icon {
+            width: clamp(100px, 15vw, 160px);
+            height: clamp(100px, 15vw, 160px);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            margin-bottom: 1vh;
+        }
+
+        #instruction-text {
+            font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+            font-weight: bold;
+            color: #1976d2;
+            text-transform: capitalize;
+            letter-spacing: 0.5px;
+        }
+
+        /* Display area for showing the sequence */
+        #display-area {
+            display: flex;
+            gap: 2vw;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        /* Choice grid area for picking answers */
+        #choice-area {
+            display: none;
+            gap: 2vw;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .symbol-card {
+            width: clamp(90px, 18vw, 180px);
+            height: clamp(90px, 18vw, 180px);
+            background-color: #ffffff;
+            border-radius: 12px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: 4px solid #ddd;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        .symbol-card.clickable {
+            cursor: pointer;
+            transition: transform 0.1s ease, border-color 0.2s ease;
+        }
+
+        .symbol-card.clickable:hover {
+            border-color: #1976d2;
+            transform: scale(1.05);
+        }
+
+        .symbol-card.clickable:active {
+            transform: scale(0.95);
+        }
+
+        .symbol-card.selected {
+            opacity: 0.4;
+            pointer-events: none;
+            border-color: #4caf50;
+        }
+
+        #message {
+            margin-top: 2vh;
+            font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+            font-weight: bold;
+            color: #2e7d32;
+            height: 4vh;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Remember the Symbols</h1>
+    <div id="progress-indicator">Level 1 of 6</div>
+
+    <div id="game-container">
+        <!-- Wrapper containing larger instruction icon and text label -->
+        <div id="instruction-wrapper">
+            <div id="instruction-icon" style="background-image: url('remember.png');"></div>
+            <div id="instruction-text">remember</div>
+        </div>
+        <div id="display-area"></div>
+        <div id="choice-area"></div>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        // Total levels configured for the game
+        const levels = [
+            { count: 1 }, 
+            { count: 1 }, 
+            { count: 2 }, 
+            { count: 2 }, 
+            { count: 3 }, 
+            { count: 3 }  
+        ];
+
+        let currentLevelIndex = 0;
+        let targetSequence = [];
+        let playerStep = 0;
+        let timer = null;
+
+        const progressEl = document.getElementById('progress-indicator');
+        const instructionWrapper = document.getElementById('instruction-wrapper');
+        const displayArea = document.getElementById('display-area');
+        const choiceArea = document.getElementById('choice-area');
+        const messageEl = document.getElementById('message');
+
+        function initGame() {
+            clearTimeout(timer);
+            currentLevelIndex = 0;
+            messageEl.textContent = '';
+            loadLevel();
+        }
+
+        function loadLevel() {
+            clearTimeout(timer);
+            const level = levels[currentLevelIndex];
+            progressEl.textContent = `Level ${currentLevelIndex + 1} of ${levels.length}`;
+            messageEl.textContent = '';
+            
+            // Show the custom 'remember' icon wrapper during memorization phase
+            instructionWrapper.style.display = 'flex';
+            displayArea.style.display = 'flex';
+            choiceArea.style.display = 'none';
+            displayArea.innerHTML = '';
+            choiceArea.innerHTML = '';
+
+            targetSequence = getRandomSymbols(level.count, 1, 30);
+            playerStep = 0;
+
+            targetSequence.forEach(num => {
+                const card = document.createElement('div');
+                card.classList.add('symbol-card');
+                card.style.backgroundImage = `url('${num}.png')`;
+                displayArea.appendChild(card);
+            });
+
+            // 5 second memorization phase before transitioning to choice selection
+            timer = setTimeout(() => {
+                startPlayerTurn();
+            }, 5000);
+        }
+
+        function startPlayerTurn() {
+            // Hide the 'remember' wrapper and display area, show choice board
+            instructionWrapper.style.display = 'none';
+            displayArea.style.display = 'none';
+            choiceArea.style.display = 'flex';
+
+            let choices = [...targetSequence];
+            
+            // Levels 1 & 2 (index 0 and 1) have a target count of 1; give them 2 total choices. Higher levels get more.
+            let desiredChoiceCount = (currentLevelIndex < 2) ? 2 : Math.max(targetSequence.length + 2, 4);
+            
+            while (choices.length < desiredChoiceCount) {
+                let randNum = Math.floor(Math.random() * 30) + 1;
+                if (!choices.includes(randNum)) {
+                    choices.push(randNum);
+                }
+            }
+            choices.sort(() => Math.random() - 0.5);
+
+            choices.forEach(num => {
+                const card = document.createElement('div');
+                card.classList.add('symbol-card', 'clickable');
+                card.style.backgroundImage = `url('${num}.png')`;
+                card.dataset.num = num;
+
+                card.addEventListener('click', () => handleCardClick(num, card));
+                choiceArea.appendChild(card);
+            });
+        }
+
+        function handleCardClick(num, cardElement) {
+            if (num === targetSequence[playerStep]) {
+                cardElement.classList.add('selected');
+                playerStep++;
+
+                if (playerStep === targetSequence.length) {
+                    triggerLevelComplete();
+                }
+            } else {
+                messageEl.textContent = "Oops! Try that sequence again.";
+                setTimeout(() => { messageEl.textContent = ''; }, 1500);
+                
+                playerStep = 0;
+                document.querySelectorAll('.symbol-card').forEach(c => c.classList.remove('selected'));
+            }
+        }
+
+        function getRandomSymbols(count, min, max) {
+            let arr = [];
+            while(arr.length < count) {
+                let r = Math.floor(Math.random() * (max - min + 1)) + min;
+                if(arr.indexOf(r) === -1) arr.push(r);
+            }
+            return arr;
+        }
+
+        function triggerLevelComplete() {
+            confetti({
+                particleCount: 80,
+                spread: 60,
+                origin: { y: 0.6 }
+            });
+
+            currentLevelIndex++;
+
+            if (currentLevelIndex < levels.length) {
+                messageEl.textContent = 'Great job! Next level coming up...';
+                setTimeout(loadLevel, 2000);
+            } else {
+                // Game completed loop back to level 1 automatically
+                messageEl.textContent = 'Amazing job! Restarting from Level 1...';
+                setTimeout(initGame, 2500);
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
