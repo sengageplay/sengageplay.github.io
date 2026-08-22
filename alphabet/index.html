@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Game</title>
+    <!-- Canvas Confetti Library for celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --cols: 3;
+            --rows: 3;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #progress-indicator {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        /* Resized larger by another 20px (max-width: 520px) */
+        #game-container {
+            position: relative;
+            width: 94vw;
+            max-width: 520px;
+            aspect-ratio: 1 / 1;
+            background-color: #fff;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.15);
+            border: 4px solid #fff;
+        }
+
+        #bg-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(var(--cols), 1fr);
+            grid-template-rows: repeat(var(--rows), 1fr);
+            z-index: 1;
+            gap: 6px;
+            padding: 6px;
+            background-color: #f0f2f5;
+            box-sizing: border-box;
+        }
+
+        .bg-cell {
+            background-color: #ffffff;
+            border-radius: 12px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: 3px solid #ddd;
+        }
+
+        #grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(var(--cols), 1fr);
+            grid-template-rows: repeat(var(--rows), 1fr);
+            z-index: 2;
+            gap: 6px;
+            padding: 6px;
+            background-color: transparent;
+            box-sizing: border-box;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: opacity 0.25s ease, transform 0.1s ease;
+            user-select: none;
+            border: 3px solid #000000;
+        }
+
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        .tile-content {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Bubblegum Sans', sans-serif;
+            font-size: 3.8rem;
+            font-weight: bold;
+            display: flex;
+            gap: 2px;
+            line-height: 1;
+        }
+
+        .cell.revealed {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #27ae60;
+            height: 30px;
+            text-align: center;
+        }
+
+        button.restart {
+            margin-top: 15px;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        button.restart:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="progress-indicator">Stage 1: A to I</div>
+
+    <div id="game-container">
+        <div id="bg-grid"></div>
+        <div id="grid"></div>
+    </div>
+
+    <div id="message"></div>
+    <button id="restart-btn" class="restart" onclick="initGame()">Play Again</button>
+
+    <script>
+        const alphabetData = {
+            'a': { name: 'apple', img: 'apple.png' },
+            'b': { name: 'ball', img: 'ball.png' },
+            'c': { name: 'cat', img: 'cat.png' },
+            'd': { name: 'dog', img: 'dog.png' },
+            'e': { name: 'elephant', img: 'elephant.png' },
+            'f': { name: 'fish', img: 'fish.png' },
+            'g': { name: 'goat', img: 'goat.png' },
+            'h': { name: 'house', img: 'house.png' },
+            'i': { name: 'igloo', img: 'igloo.png' },
+            'j': { name: 'jar', img: 'jar.png' },
+            'k': { name: 'kite', img: 'kite.png' },
+            'l': { name: 'lion', img: 'lion.png' },
+            'm': { name: 'monkey', img: 'monkey.png' },
+            'n': { name: 'nest', img: 'nest.png' },
+            'o': { name: 'orange', img: 'orange.png' },
+            'p': { name: 'pig', img: 'pig.png' },
+            'q': { name: 'queen', img: 'queen.png' },
+            'r': { name: 'robot', img: 'robot.png' },
+            's': { name: 'star', img: 'star.png' },
+            't': { name: 'train', img: 'train.png' },
+            'u': { name: 'umbrella', img: 'umbrella.png' },
+            'v': { name: 'van', img: 'van.png' },
+            'w': { name: 'watch', img: 'watch.png' },
+            'x': { name: 'xylophone', img: 'xylophone.png' },
+            'y': { name: 'yoyo', img: 'yoyo.png' },
+            'z': { name: 'zebra', img: 'zebra.png' }
+        };
+
+        const levels = [
+            { name: "A to I", letters: ['a','b','c','d','e','f','g','h','i'] },
+            { name: "J to R", letters: ['j','k','l','m','n','o','p','q','r'] },
+            { name: "S to Z", letters: ['s','t','u','v','w','x','y','z'] }
+        ];
+
+        const rainbowColors = [
+            "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#3498db", "#9b59b6", "#e84393",
+            "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#3498db", "#9b59b6", "#e84393",
+            "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#3498db", "#9b59b6", "#e84393",
+            "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#3498db"
+        ];
+
+        let currentLevelIndex = 0;
+        let remainingTiles = 0;
+
+        function speakWord(word) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.rate = 1.1; 
+            utterance.pitch = 1.3; 
+
+            let voices = window.speechSynthesis.getVoices();
+            let selectedVoice = voices.find(v => 
+                v.lang.startsWith('en') && (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Hazel') || v.name.includes('Victoria') || v.name.includes('Google UK English Female'))
+            );
+
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        const gridEl = document.getElementById('grid');
+        const bgGridEl = document.getElementById('bg-grid');
+        const progressEl = document.getElementById('progress-indicator');
+        const messageEl = document.getElementById('message');
+        const restartBtn = document.getElementById('restart-btn');
+
+        function initGame() {
+            currentLevelIndex = 0;
+            restartBtn.style.display = 'none';
+            messageEl.textContent = '';
+            loadLevel();
+        }
+
+        function loadLevel() {
+            const level = levels[currentLevelIndex];
+            progressEl.textContent = `Stage ${currentLevelIndex + 1}: ${level.name}`;
+            messageEl.textContent = '';
+
+            gridEl.innerHTML = '';
+            bgGridEl.innerHTML = '';
+
+            let levelLetters = [...level.letters];
+            levelLetters.sort(() => Math.random() - 0.5);
+            remainingTiles = levelLetters.length;
+
+            levelLetters.forEach(char => {
+                const data = alphabetData[char];
+
+                const bgCell = document.createElement('div');
+                bgCell.classList.add('bg-cell');
+                bgCell.style.backgroundImage = `url('${data.img}')`;
+                bgGridEl.appendChild(bgCell);
+
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+
+                const alphabetIndex = char.charCodeAt(0) - 97;
+                const tileColor = rainbowColors[alphabetIndex];
+
+                const textDiv = document.createElement('div');
+                textDiv.classList.add('tile-content');
+                textDiv.innerHTML = `<span style="color: ${tileColor};">${char.toUpperCase()}${char}</span>`;
+                cell.appendChild(textDiv);
+
+                cell.addEventListener('click', () => {
+                    if (!cell.classList.contains('revealed')) {
+                        speakWord(data.name);
+                        cell.classList.add('revealed');
+                        remainingTiles--;
+
+                        if (remainingTiles === 0) {
+                            triggerLevelComplete();
+                        }
+                    }
+                });
+
+                gridEl.appendChild(cell);
+            });
+        }
+
+        function triggerLevelComplete() {
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            currentLevelIndex++;
+
+            if (currentLevelIndex < levels.length) {
+                messageEl.textContent = 'Wonderful! Moving to next stage...';
+                setTimeout(loadLevel, 2200);
+            } else {
+                messageEl.textContent = 'Amazing job! You completed all stages!';
+                restartBtn.style.display = 'block';
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
