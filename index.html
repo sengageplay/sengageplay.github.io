@@ -70,6 +70,20 @@
             background-color: #22c55e;
         }
 
+        /* NEW UNLOCK BUTTON STYLING */
+        .auth-btn.unlock-pass-btn {
+            background-color: #f59e0b;
+            color: #000000;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 700;
+        }
+
+        .auth-btn.unlock-pass-btn:hover {
+            background-color: #d97706;
+        }
+
         #user-info {
             display: flex;
             align-items: center;
@@ -154,6 +168,11 @@
         <a href="index.html" style="color: #4ade80; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Games</a>
         <a href="about.html" style="color: #a1a1aa; text-decoration: none; font-weight: 600; font-size: 1.1rem;">About Us</a>
         
+        <!-- NEW UNLOCK ALL GAMES BUTTON -->
+        <button onclick="handleUnlockClick()" class="auth-btn unlock-pass-btn">
+            🔓 Unlock All Games
+        </button>
+
         <a href="https://buymeacoffee.com/donenowplay" target="_blank" rel="noopener noreferrer" style="background-color: #FFDD00; color: #000000; text-decoration: none; font-weight: 700; font-size: 0.95rem; padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
             ☕ Support Us
         </a>
@@ -183,7 +202,7 @@
 
     <div class="arcade-grid">
 
-        <!-- FREE GAMES (1 TO 20) -->
+        <!-- FREE GAMES (1 TO 21) -->
         <a href="kaleidscopeart/" class="game-card"><img src="images/kaleidoscope.png" alt="kaleidoscope art"></a>
         <a href="magicfinger/" class="game-card"><img src="images/magicfinger2.png" alt="Magic Finger"></a>
         <a href="waterandsand/" class="game-card"><img src="images/waterandsand.png" alt="Water and Sand"></a>
@@ -206,7 +225,7 @@
         <a href="buildgame1/" class="game-card"><img src="images/build1.png" alt="Build an Image Game 1"></a>
         <a href="countanddraw/" class="game-card"><img src="images/countanddrawtitle.png" alt="Count and Draw 1"></a>
 
-        <!-- PREMIUM GAMES (21 TO 30) -->
+        <!-- PREMIUM GAMES -->
         <a href="colourchoose/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/colourchoosetitle.png" alt="colour choose game"></a>
         <a href="animalfeed/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/animalfeedtitlecard.png" alt="Feed the Animals game"></a>
         <a href="weatherballoons/" class="game-card premium-game" data-premium="true"><span class="premium-badge">🔒 Premium</span><img src="images/weatherballoonstitlecard.png" alt="Weather Balloons game"></a>
@@ -254,6 +273,21 @@
             if (data && data.is_premium) {
                 userIsPremium = true;
             }
+        }
+    }
+
+    // Handle "Unlock All Games" button click logic
+    function handleUnlockClick() {
+        if (!currentUserSession) {
+            alert("Please sign up or sign in first so we can link your full access pass to your account!");
+            promptSignUp();
+        } else if (!userIsPremium) {
+            const upgrade = confirm("You are signed in! Would you like to proceed to checkout to unlock all games?");
+            if (upgrade) {
+                window.location.href = STRIPE_PAYMENT_LINK;
+            }
+        } else {
+            alert("You already have an active Full Access Pass!");
         }
     }
 
